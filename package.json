@@ -14,10 +14,12 @@
     "@schedule-x/events-service": "^4.7.0",
     "@schedule-x/theme-default": "^4.7.0",
     "@schedule-x/vue": "^4.1.0",
+    "apexcharts": "^7.1.0",
     "axios": "^1.20.0",
     "nuxt": "^4.5.2",
     "temporal-polyfill": "^0.3.0",
     "vue": "^3.5.42",
-    "vue-router": "^5.3.0"
+    "vue-router": "^5.3.0",
+    "vue3-apexcharts": "^1.11.1"
   }
 }

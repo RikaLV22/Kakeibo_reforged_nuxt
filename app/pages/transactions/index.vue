@@ -69,6 +69,13 @@
               <h2>家計状況</h2>
               <p>これまでの総合計を確認できます</p>
             </div>
+
+            <NuxtLink
+              to="/transactions/history"
+              class="history-button"
+            >
+              過去データをみる
+            </NuxtLink>
           </div>
 
           <div class="summary-panel">
@@ -151,18 +158,9 @@
               </div>
             </div>
 
-            <div class="graph-placeholder">
-              <div class="placeholder-icon">
-                📈
-              </div>
-
-              <h3>組織収支グラフ</h3>
-
-              <p>
-                Railsで集計した月別データを
-                ここに表示します
-              </p>
-            </div>
+            <OrganizationBalanceChart
+              :data="organization.monthly"
+            />
           </div>
 
           <div class="dashboard-card graph-card">
@@ -195,40 +193,22 @@
               </div>
             </div>
 
-            <div class="graph-placeholder">
-              <div class="placeholder-icon">
-                🥧
-              </div>
-
-              <h3>カテゴリ別グラフ</h3>
-
-              <p>
-                食費・交通費・趣味などの
-                支出割合を表示します
-              </p>
-            </div>
+            <ExpenseCategoryChart
+              :data="organization.category_expense"
+            />
           </div>
 
           <div class="dashboard-card graph-card">
             <div class="card-header">
               <div>
-                <h2>月別支出</h2>
-                <p>月ごとの組織支出を比較</p>
+                <h2>ユーザごとの収支推移</h2>
+                <p>組織家計簿におけるユーザごとの収入・支出</p>
               </div>
             </div>
 
-            <div class="graph-placeholder">
-              <div class="placeholder-icon">
-                📉
-              </div>
-
-              <h3>月別支出グラフ</h3>
-
-              <p>
-                月ごとの支出変化を
-                表示します
-              </p>
-            </div>
+            <UserBalanceChart
+              :users="users"
+            />
           </div>
 
           <div class="dashboard-card graph-card">
@@ -260,7 +240,13 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+
 import TransactionCalendar from '~/components/TransactionCalendar.client.vue'
+import ExpenseCategoryChart from '~/components/ExpenseCategoryChart.client.vue'
+import OrganizationBalanceChart from '~/components/OrganizationBalanceChart.client.vue'
+import UserBalanceChart from '~/components/UserBalanceChart.client.vue'
+
+const { $api } = useNuxtApp()
 
 interface PeriodSummary {
   income: number
@@ -275,17 +261,43 @@ interface MonthlySummary {
   balance: number
 }
 
+interface DailySummary {
+  date: string
+  income: number
+  expense: number
+  balance: number
+}
+
+interface UserTrend {
+  week: DailySummary[]
+  month: DailySummary[]
+  year: MonthlySummary[]
+}
+
+interface UserSummary {
+  user_id: number
+  user_name: string
+  trends: UserTrend
+}
+
+interface CategoryExpense {
+  category: string
+  amount: number
+}
+
 interface SummarySection {
   total: PeriodSummary
   current_month: PeriodSummary
   current_year: PeriodSummary
   monthly: MonthlySummary[]
+  category_expense: CategoryExpense[]
 }
 
 interface SummaryResponse {
   organization: SummarySection
   organization_member: SummarySection
   personal: SummarySection
+  users: UserSummary[]
 }
 
 interface ChatMessage {
@@ -293,25 +305,27 @@ interface ChatMessage {
   text: string
 }
 
-const { $api } = useNuxtApp()
-
 const organization = ref<SummarySection>({
   total: {
     income: 0,
     expense: 0,
     balance: 0
   },
+
   current_month: {
     income: 0,
     expense: 0,
     balance: 0
   },
+
   current_year: {
     income: 0,
     expense: 0,
     balance: 0
   },
-  monthly: []
+
+  monthly: [],
+  category_expense: []
 })
 
 const organizationMember = ref<SummarySection>({
@@ -320,18 +334,24 @@ const organizationMember = ref<SummarySection>({
     expense: 0,
     balance: 0
   },
+
   current_month: {
     income: 0,
     expense: 0,
     balance: 0
   },
+
   current_year: {
     income: 0,
     expense: 0,
     balance: 0
   },
-  monthly: []
+
+  monthly: [],
+  category_expense: []
 })
+
+const users = ref<UserSummary[]>([])
 
 const chatInput = ref('')
 const isSending = ref(false)
@@ -344,19 +364,33 @@ const messages = ref<ChatMessage[]>([
 ])
 
 const formatNumber = (value: number) => {
-  return new Intl.NumberFormat('ja-JP').format(value || 0)
+  return new Intl.NumberFormat('ja-JP').format(
+    value || 0
+  )
 }
 
 const fetchSummary = async () => {
   try {
-    const response = await $api.get<SummaryResponse>(
-      '/transactions/summary'
+    const response = await $api.get(
+      '/transactions/summary',
+      {
+        params: {
+          year: new Date().getFullYear()
+        }
+      }
     )
 
-    organization.value = response.data.organization
-    organizationMember.value = response.data.organization_member
+    const data =
+      response.data as unknown as SummaryResponse
 
-    console.log('summary:', response.data)
+    organization.value = data.organization
+
+    organizationMember.value =
+      data.organization_member
+
+    users.value = data.users || []
+
+    console.log('summary:', data)
   } catch (error) {
     console.error(
       '組織家計データの取得に失敗しました:',
@@ -896,5 +930,24 @@ onMounted(async () => {
   .send-button {
     padding: 0 14px;
   }
+}
+.history-button {
+  flex-shrink: 0;
+  padding: 7px 12px;
+  border: 1px solid #e2e6ed;
+  border-radius: 9px;
+  background: #fff;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: 0.2s ease;
+}
+
+.history-button:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #111827;
+  transform: translateY(-1px);
 }
 </style>
