@@ -6,10 +6,10 @@
       <div class="page-header">
         <div>
           <NuxtLink
-            to="/transactions"
+            to="/personal"
             class="back-link"
           >
-            ← 組織家計簿に戻る
+            ← 個人家計簿に戻る
           </NuxtLink>
 
           <h1>過去データ分析</h1>
@@ -56,11 +56,11 @@
           <section class="summary-grid">
             <div class="summary-card">
               <span class="summary-label">
-                組織総収入
+                総収入
               </span>
 
               <strong class="summary-value income">
-                +¥{{ formatNumber(organization.total.income) }}
+                +¥{{ formatNumber(personal.total.income) }}
               </strong>
 
               <span class="summary-sub">
@@ -70,11 +70,11 @@
 
             <div class="summary-card">
               <span class="summary-label">
-                組織総支出
+                総支出
               </span>
 
               <strong class="summary-value expense">
-                -¥{{ formatNumber(organization.total.expense) }}
+                -¥{{ formatNumber(personal.total.expense) }}
               </strong>
 
               <span class="summary-sub">
@@ -84,43 +84,33 @@
 
             <div class="summary-card">
               <span class="summary-label">
-                組織収支
-              </span>
-
-              <strong
-                class="summary-value"
-                :class="{
-                  positive: organization.total.balance >= 0,
-                  negative: organization.total.balance < 0
-                }"
-              >
-                ¥{{ formatNumber(organization.total.balance) }}
-              </strong>
-
-              <span class="summary-sub">
-                {{ selectedYear }}年
-              </span>
-            </div>
-
-            <div class="summary-card">
-              <span class="summary-label">
-                自分の収支
+                収支
               </span>
 
               <strong
                 class="summary-value"
                 :class="{
                   positive:
-                    organizationMember.total.balance >= 0,
+                    personal.total.balance >= 0,
                   negative:
-                    organizationMember.total.balance < 0
+                    personal.total.balance < 0
                 }"
               >
-                ¥{{
-                  formatNumber(
-                    organizationMember.total.balance
-                  )
-                }}
+                ¥{{ formatNumber(personal.total.balance) }}
+              </strong>
+
+              <span class="summary-sub">
+                {{ selectedYear }}年
+              </span>
+            </div>
+
+            <div class="summary-card">
+              <span class="summary-label">
+                取引件数
+              </span>
+
+              <strong class="summary-value">
+                {{ transactions.length }}件
               </strong>
 
               <span class="summary-sub">
@@ -142,24 +132,7 @@
             </div>
 
             <OrganizationBalanceChart
-              :data="organization.monthly"
-            />
-          </section>
-
-          <!-- ユーザごとの収支 -->
-          <section class="dashboard-card large-card">
-            <div class="card-header">
-              <div>
-                <h2>ユーザごとの収支</h2>
-
-                <p>
-                  {{ selectedYear }}年におけるユーザーごとの収支
-                </p>
-              </div>
-            </div>
-
-            <UserHistoryChart
-              :users="users"
+              :data="personal.monthly"
             />
           </section>
 
@@ -177,7 +150,7 @@
               </div>
 
               <ExpenseCategoryChart
-                :data="organization.category_expense"
+                :data="personal.category_expense"
               />
             </section>
 
@@ -194,7 +167,7 @@
 
               <div class="expense-list">
                 <div
-                  v-for="month in organization.monthly"
+                  v-for="month in personal.monthly"
                   :key="month.month"
                   class="expense-row"
                 >
@@ -254,7 +227,6 @@
               <table class="transaction-table">
                 <colgroup>
                   <col class="col-date" />
-                  <col class="col-user" />
                   <col class="col-type" />
                   <col class="col-category" />
                   <col class="col-amount" />
@@ -264,7 +236,6 @@
                 <thead>
                   <tr>
                     <th>日付</th>
-                    <th>ユーザー</th>
                     <th>種別</th>
                     <th>カテゴリ</th>
                     <th>金額</th>
@@ -281,10 +252,6 @@
                   >
                     <td>
                       {{ formatDate(transaction.date) }}
-                    </td>
-
-                    <td>
-                      {{ transaction.user_name }}
                     </td>
 
                     <td>
@@ -397,16 +364,6 @@
 
             <div class="detail-row">
               <span class="detail-label">
-                ユーザー
-              </span>
-
-              <span class="detail-value">
-                {{ selectedTransaction.user_name }}
-              </span>
-            </div>
-
-            <div class="detail-row">
-              <span class="detail-label">
                 種別
               </span>
 
@@ -447,33 +404,29 @@
                   selectedTransaction.transaction_type === 'income'
                     ? '+'
                     : '-'
-                }}¥{{
-                  formatNumber(
-                    selectedTransaction.amount
-                  )
-                }}
+                }}¥{{ formatNumber(selectedTransaction.amount) }}
               </span>
             </div>
 
             <div class="detail-row">
-                <span class="detail-label">
-                    口座名
-                </span>
+              <span class="detail-label">
+                口座名
+              </span>
 
-                <span class="detail-value">
-                    {{ selectedTransaction.account_name || '-' }}
-                </span>
-                </div>
+              <span class="detail-value">
+                {{ selectedTransaction.account_name || '-' }}
+              </span>
+            </div>
 
-                <div class="detail-row">
-                <span class="detail-label">
-                    口座番号
-                </span>
+            <div class="detail-row">
+              <span class="detail-label">
+                口座番号
+              </span>
 
-                <span class="detail-value">
-                    {{ selectedTransaction.account_number || '-' }}
-                </span>
-                </div>
+              <span class="detail-value">
+                {{ selectedTransaction.account_number || '-' }}
+              </span>
+            </div>
 
             <div
               v-if="selectedTransaction.card_number"
@@ -485,6 +438,16 @@
 
               <span class="detail-value">
                 {{ selectedTransaction.card_number }}
+              </span>
+            </div>
+
+            <div class="detail-row">
+              <span class="detail-label">
+                支払方法
+              </span>
+
+              <span class="detail-value">
+                {{ selectedTransaction.payment_method || '-' }}
               </span>
             </div>
           </div>
@@ -514,7 +477,6 @@ import {
 
 import OrganizationBalanceChart from '~/components/OrganizationBalanceChart.client.vue'
 import ExpenseCategoryChart from '~/components/ExpenseCategoryChart.client.vue'
-import UserHistoryChart from '~/components/UserHistoryChart.client.vue'
 
 const { $api } = useNuxtApp()
 
@@ -542,15 +504,9 @@ interface SummarySection {
   category_expense: CategoryExpense[]
 }
 
-interface UserMonthlySummary {
-  user_id: number
-  user_name: string
-  monthly: MonthlySummary[]
-}
-
 interface Transaction {
   id: number
-  user_name: string
+  user_name?: string
   transaction_type: 'income' | 'expense'
   category: string
   amount: number
@@ -564,10 +520,7 @@ interface Transaction {
 
 interface HistoryResponse {
   year: number
-  organization: SummarySection
-  organization_member: SummarySection
   personal: SummarySection
-  users: UserMonthlySummary[]
   transactions: Transaction[]
 }
 
@@ -584,7 +537,7 @@ const isLoading = ref(false)
 const selectedTransaction =
   ref<Transaction | null>(null)
 
-const organization = ref<SummarySection>({
+const personal = ref<SummarySection>({
   total: {
     income: 0,
     expense: 0,
@@ -596,21 +549,8 @@ const organization = ref<SummarySection>({
   category_expense: []
 })
 
-const organizationMember = ref<SummarySection>({
-  total: {
-    income: 0,
-    expense: 0,
-    balance: 0
-  },
-
-  monthly: [],
-
-  category_expense: []
-})
-
-const users = ref<UserMonthlySummary[]>([])
-
-const transactions = ref<Transaction[]>([])
+const transactions =
+  ref<Transaction[]>([])
 
 const availableYears = computed(() => {
   const years: number[] = []
@@ -629,8 +569,8 @@ const availableYears = computed(() => {
 const hasHistoryData = computed(() => {
   return (
     transactions.value.length > 0 ||
-    organization.value.total.income > 0 ||
-    organization.value.total.expense > 0
+    personal.value.total.income > 0 ||
+    personal.value.total.expense > 0
   )
 })
 
@@ -649,13 +589,17 @@ const monthlyTransactions = computed(() => {
   )
 })
 
-const formatNumber = (value: number) => {
+const formatNumber = (
+  value: number
+) => {
   return new Intl.NumberFormat(
     'ja-JP'
   ).format(value || 0)
 }
 
-const formatDate = (date: string) => {
+const formatDate = (
+  date: string
+) => {
   const value = new Date(
     `${date}T00:00:00`
   )
@@ -671,7 +615,7 @@ const monthlyExpensePercentage = (
   expense: number
 ) => {
   const maxExpense = Math.max(
-    ...organization.value.monthly.map(
+    ...personal.value.monthly.map(
       item => Number(item.expense)
     ),
     1
@@ -697,26 +641,21 @@ const fetchHistory = async () => {
   isLoading.value = true
 
   try {
-    const response = await $api.get(
-      '/organization_transactions/history_summary',
-      {
-        params: {
-          year: selectedYear.value
+    const response =
+      await $api.get(
+        '/personal_transactions/history_summary',
+        {
+          params: {
+            year: selectedYear.value
+          }
         }
-      }
-    )
+      )
 
     const data =
       response.data as unknown as HistoryResponse
 
-    organization.value =
-      data.organization
-
-    organizationMember.value =
-      data.organization_member
-
-    users.value =
-      data.users || []
+    personal.value =
+      data.personal
 
     transactions.value =
       data.transactions || []
@@ -726,7 +665,7 @@ const fetchHistory = async () => {
       error
     )
 
-    organization.value = {
+    personal.value = {
       total: {
         income: 0,
         expense: 0,
@@ -737,20 +676,6 @@ const fetchHistory = async () => {
 
       category_expense: []
     }
-
-    organizationMember.value = {
-      total: {
-        income: 0,
-        expense: 0,
-        balance: 0
-      },
-
-      monthly: [],
-
-      category_expense: []
-    }
-
-    users.value = []
 
     transactions.value = []
   } finally {
@@ -976,10 +901,6 @@ body {
   margin-bottom: 0;
 }
 
-.user-chart {
-  width: 100%;
-}
-
 .expense-list {
   padding: 0 19px 19px;
 }
@@ -1060,7 +981,6 @@ body {
   font-weight: 700;
 }
 
-/* 取引一覧 */
 .transaction-table-wrap {
   width: 100%;
   overflow-x: auto;
@@ -1110,35 +1030,29 @@ body {
   background: #f8fafc;
 }
 
-/* 列幅 */
 .transaction-table th:nth-child(1),
 .transaction-table td:nth-child(1) {
-  width: 14%;
+  width: 18%;
 }
 
 .transaction-table th:nth-child(2),
 .transaction-table td:nth-child(2) {
-  width: 16%;
+  width: 14%;
 }
 
 .transaction-table th:nth-child(3),
 .transaction-table td:nth-child(3) {
-  width: 11%;
+  width: 24%;
 }
 
 .transaction-table th:nth-child(4),
 .transaction-table td:nth-child(4) {
-  width: 20%;
+  width: 22%;
 }
 
 .transaction-table th:nth-child(5),
 .transaction-table td:nth-child(5) {
-  width: 20%;
-}
-
-.transaction-table th:nth-child(6),
-.transaction-table td:nth-child(6) {
-  width: 19%;
+  width: 22%;
 }
 
 .type-badge {
@@ -1172,7 +1086,6 @@ body {
   color: #dc2626;
 }
 
-/* 取引詳細モーダル */
 .modal-overlay {
   position: fixed;
   inset: 0;

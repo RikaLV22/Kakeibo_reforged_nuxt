@@ -7,15 +7,15 @@
         <div class="dashboard-card calendar-card">
           <div class="card-header">
             <div>
-              <h2>家計簿カレンダー</h2>
-              <p>組織の収入と支出をカレンダーで管理</p>
+              <h2>マイ家計簿</h2>
+              <p>自分の収入と支出をカレンダーで管理</p>
             </div>
           </div>
 
           <div class="calendar-wrapper">
             <TransactionCalendar
-              api-base-path="/organization_transactions"
-              account-api-base-path="/organization_accounts"
+              api-base-path="/personal_transactions"
+              account-api-base-path="/personal_accounts"
             />
           </div>
         </div>
@@ -24,7 +24,7 @@
           <div class="card-header">
             <div>
               <h2>AI 家計簿アシスタント</h2>
-              <p>家計についてAIに相談できます</p>
+              <p>自分の家計についてAIに相談できます</p>
             </div>
 
             <div class="chat-header-actions">
@@ -75,7 +75,7 @@
             <input
               v-model="chatInput"
               type="text"
-              placeholder="家計について質問してください..."
+              placeholder="自分の家計について質問してください..."
               @keyup.enter="sendMessage"
             />
 
@@ -94,12 +94,12 @@
         <div class="dashboard-card income-summary-card">
           <div class="card-header">
             <div>
-              <h2>家計状況</h2>
-              <p>これまでの総合計を確認できます</p>
+              <h2>個人の家計状況</h2>
+              <p>自分の収支を確認できます</p>
             </div>
 
             <NuxtLink
-              to="/transactions/history"
+              to="/personal/history"
               class="history-button"
             >
               過去データをみる
@@ -109,18 +109,18 @@
           <div class="summary-panel">
             <div class="summary-section">
               <div class="summary-title">
-                <span class="summary-icon organization-icon">
-                  組
+                <span class="summary-icon personal-icon">
+                  今
                 </span>
 
                 <div>
-                  <h3>組織全体</h3>
-                  <span>Organization Total</span>
+                  <h3>今月の家計</h3>
+                  <span>Current Month</span>
                 </div>
               </div>
 
               <div class="summary-main-value">
-                ¥{{ formatNumber(organization.total.balance) }}
+                ¥{{ formatNumber(currentMonth.balance) }}
               </div>
 
               <div class="summary-stats">
@@ -128,7 +128,7 @@
                   <span class="stat-label">総収入</span>
 
                   <span class="stat-value income">
-                    +¥{{ formatNumber(organization.total.income) }}
+                    +¥{{ formatNumber(currentMonth.income) }}
                   </span>
                 </div>
 
@@ -136,7 +136,7 @@
                   <span class="stat-label">総支出</span>
 
                   <span class="stat-value expense">
-                    -¥{{ formatNumber(organization.total.expense) }}
+                    -¥{{ formatNumber(currentMonth.expense) }}
                   </span>
                 </div>
               </div>
@@ -146,18 +146,18 @@
 
             <div class="summary-section">
               <div class="summary-title">
-                <span class="summary-icon personal-icon">
-                  自
+                <span class="summary-icon organization-icon">
+                  年
                 </span>
 
                 <div>
-                  <h3>自分</h3>
-                  <span>Member Total</span>
+                  <h3>今年の家計</h3>
+                  <span>Current Year</span>
                 </div>
               </div>
 
               <div class="summary-main-value">
-                ¥{{ formatNumber(organizationMember.total.balance) }}
+                ¥{{ formatNumber(currentYear.balance) }}
               </div>
 
               <div class="summary-stats">
@@ -165,7 +165,7 @@
                   <span class="stat-label">総収入</span>
 
                   <span class="stat-value income">
-                    +¥{{ formatNumber(organizationMember.total.income) }}
+                    +¥{{ formatNumber(currentYear.income) }}
                   </span>
                 </div>
 
@@ -173,7 +173,7 @@
                   <span class="stat-label">総支出</span>
 
                   <span class="stat-value expense">
-                    -¥{{ formatNumber(organizationMember.total.expense) }}
+                    -¥{{ formatNumber(currentYear.expense) }}
                   </span>
                 </div>
               </div>
@@ -185,52 +185,26 @@
           <div class="dashboard-card graph-card">
             <div class="card-header">
               <div>
-                <h2>組織の収支推移</h2>
-                <p>月ごとの組織全体の収入・支出・収支</p>
-              </div>
-            </div>
-
-            <OrganizationBalanceChart
-              :data="organization.monthly"
-            />
-          </div>
-
-          <div class="dashboard-card graph-card">
-            <div class="card-header">
-              <div>
                 <h2>自分の収支推移</h2>
-                <p>組織家計簿における自分の収入・支出</p>
+                <p>月ごとの収入・支出・収支</p>
               </div>
             </div>
 
             <OrganizationBalanceChart
-              :data="organizationMember.monthly"
+              :data="monthlySummary"
             />
           </div>
 
           <div class="dashboard-card graph-card">
             <div class="card-header">
               <div>
-                <h2>支出カテゴリ</h2>
-                <p>組織のカテゴリ別支出</p>
+                <h2>自分の支出カテゴリ</h2>
+                <p>カテゴリ別の支出</p>
               </div>
             </div>
 
             <ExpenseCategoryChart
-              :data="organization.category_expense"
-            />
-          </div>
-
-          <div class="dashboard-card graph-card">
-            <div class="card-header">
-              <div>
-                <h2>ユーザごとの収支推移</h2>
-                <p>組織家計簿におけるユーザごとの収入・支出</p>
-              </div>
-            </div>
-
-            <UserBalanceChart
-              :users="users"
+              :data="categoryExpense"
             />
           </div>
 
@@ -269,7 +243,7 @@
         <div class="chat-modal-header">
           <div>
             <h2>AI 家計簿アシスタント</h2>
-            <p>家計についてAIに相談できます</p>
+            <p>自分の家計についてAIに相談できます</p>
           </div>
 
           <div class="chat-modal-header-actions">
@@ -320,7 +294,7 @@
           <input
             v-model="chatInput"
             type="text"
-            placeholder="家計について質問してください..."
+            placeholder="自分の家計について質問してください..."
             @keyup.enter="sendMessage"
           />
 
@@ -364,9 +338,8 @@ import {
 import TransactionCalendar from '~/components/TransactionCalendar.client.vue'
 import ExpenseCategoryChart from '~/components/ExpenseCategoryChart.client.vue'
 import OrganizationBalanceChart from '~/components/OrganizationBalanceChart.client.vue'
-import UserBalanceChart from '~/components/UserBalanceChart.client.vue'
-import type { Account } from '~/types/account'
 import AccountTransferModal from '~/components/AccountTransferModal.vue'
+import type { Account } from '~/types/account'
 
 const { $api } = useNuxtApp()
 
@@ -383,48 +356,25 @@ interface MonthlySummary {
   balance: number
 }
 
-interface DailySummary {
-  date: string
-  income: number
-  expense: number
-  balance: number
-}
-
-interface UserTrend {
-  week: DailySummary[]
-  month: DailySummary[]
-  year: MonthlySummary[]
-}
-
-interface UserSummary {
-  user_id: number
-  user_name: string
-  trends: UserTrend
-}
-
 interface CategoryExpense {
   category: string
   amount: number
 }
 
-interface SummarySection {
-  total: PeriodSummary
-  current_month: PeriodSummary
-  current_year: PeriodSummary
-  monthly: MonthlySummary[]
-  category_expense: CategoryExpense[]
-}
-
-interface SummaryResponse {
-  organization?: SummarySection
-  organization_member?: SummarySection
-  personal?: SummarySection
-  users?: UserSummary[]
-  total?: PeriodSummary
+interface PersonalSummary {
   current_month?: PeriodSummary
   current_year?: PeriodSummary
   monthly?: MonthlySummary[]
   category_expense?: CategoryExpense[]
+}
+
+interface SummaryResponse {
+  current_month?: PeriodSummary
+  current_year?: PeriodSummary
+  monthly?: MonthlySummary[]
+  category_expense?: CategoryExpense[]
+  personal?: PersonalSummary
+  organization_member?: PersonalSummary
 }
 
 interface TransferForm {
@@ -444,26 +394,19 @@ const emptyPeriodSummary = (): PeriodSummary => ({
   balance: 0
 })
 
-const emptySummarySection = (): SummarySection => ({
-  total: emptyPeriodSummary(),
-  current_month: emptyPeriodSummary(),
-  current_year: emptyPeriodSummary(),
-  monthly: [],
-  category_expense: []
-})
+const currentMonth = ref<PeriodSummary>(
+  emptyPeriodSummary()
+)
 
-const organization =
-  ref<SummarySection>(
-    emptySummarySection()
-  )
+const currentYear = ref<PeriodSummary>(
+  emptyPeriodSummary()
+)
 
-const organizationMember =
-  ref<SummarySection>(
-    emptySummarySection()
-  )
+const monthlySummary =
+  ref<MonthlySummary[]>([])
 
-const users =
-  ref<UserSummary[]>([])
+const categoryExpense =
+  ref<CategoryExpense[]>([])
 
 const accounts =
   ref<Account[]>([])
@@ -492,6 +435,30 @@ const closeAccountModal = () => {
     null
 }
 
+const chatInput =
+  ref('')
+
+const isSending =
+  ref(false)
+
+const messages =
+  ref<ChatMessage[]>([
+    {
+      role: 'bot',
+      text:
+        'こんにちは！自分の家計について何でも相談してください。'
+    }
+  ])
+
+const showChatModal =
+  ref(false)
+
+const chatBody =
+  ref<HTMLElement | null>(null)
+
+const chatModalBody =
+  ref<HTMLElement | null>(null)
+
 const showTransferModal =
   ref(false)
 
@@ -508,37 +475,17 @@ const transferForm =
     amount: null
   })
 
-const showChatModal =
-  ref(false)
-
-const chatBody =
-  ref<HTMLElement | null>(null)
-
-const chatModalBody =
-  ref<HTMLElement | null>(null)
-
-const chatInput =
-  ref('')
-
-const isSending =
-  ref(false)
-
-const messages =
-  ref<ChatMessage[]>([
-    {
-      role: 'bot',
-      text:
-        'こんにちは！組織の家計について何でも相談してください。'
-    }
-  ])
-
 const formatNumber = (
-  value: number
+  value:
+    | number
+    | string
+    | null
+    | undefined
 ) => {
   return new Intl.NumberFormat(
     'ja-JP'
   ).format(
-    value || 0
+    Number(value || 0)
   )
 }
 
@@ -593,84 +540,67 @@ const closeChatModal =
       false
   }
 
-const normalizeSummary =
-  (
-    data: SummaryResponse
-  ): SummarySection => {
-    const source =
-      data.organization ||
-      data
-
-    return {
-      total:
-        source.total ||
-        emptyPeriodSummary(),
-
-      current_month:
-        source.current_month ||
-        emptyPeriodSummary(),
-
-      current_year:
-        source.current_year ||
-        emptyPeriodSummary(),
-
-      monthly:
-        source.monthly ||
-        [],
-
-      category_expense:
-        source.category_expense ||
-        []
-    }
-  }
-
 const fetchSummary =
   async () => {
     try {
       const response =
         await $api.get<SummaryResponse>(
-          '/organization_transactions/summary',
-          {
-            params: {
-              year:
-                new Date().getFullYear()
-            }
-          }
+          '/personal_transactions/summary'
         )
 
+      console.log(response.data)
+
       const data =
+        response.data?.personal ||
+        response.data?.organization_member ||
         response.data
 
-      organization.value =
-        normalizeSummary(data)
+      if (!data) {
+        currentMonth.value =
+          emptyPeriodSummary()
 
-      if (
-        data.organization_member
-      ) {
-        organizationMember.value =
-          data.organization_member
-      } else if (
-        data.personal
-      ) {
-        organizationMember.value =
-          data.personal
-      } else {
-        organizationMember.value =
-          emptySummarySection()
+        currentYear.value =
+          emptyPeriodSummary()
+
+        monthlySummary.value =
+          []
+
+        categoryExpense.value =
+          []
+
+        return
       }
 
-      users.value =
-        data.users || []
+      currentMonth.value =
+        data.current_month ||
+        emptyPeriodSummary()
 
-      console.log(
-        'organizationMember.monthly:',
-        organizationMember.value.monthly
-      )
+      currentYear.value =
+        data.current_year ||
+        emptyPeriodSummary()
+
+      monthlySummary.value =
+        data.monthly || []
+
+      categoryExpense.value =
+        data.category_expense || []
     } catch (error) {
       console.error(
-        '組織家計データの取得に失敗しました:',
+        '個人家計データの取得に失敗しました:',
         error
       )
+
+      currentMonth.value =
+        emptyPeriodSummary()
+
+      currentYear.value =
+        emptyPeriodSummary()
+
+      monthlySummary.value =
+        []
+
+      categoryExpense.value =
+        []
     }
   }
 
@@ -679,16 +609,19 @@ const fetchAccounts =
     try {
       const response =
         await $api.get<Account[]>(
-          '/organization_accounts'
+          '/personal_accounts'
         )
 
       accounts.value =
         response.data || []
     } catch (error) {
       console.error(
-        '口座情報の取得に失敗しました:',
+        '個人口座データの取得に失敗しました:',
         error
       )
+
+      accounts.value =
+        []
     }
   }
 
@@ -709,9 +642,7 @@ const openTransferModal =
 
 const closeTransferModal =
   () => {
-    if (
-      isTransferring.value
-    ) {
+    if (isTransferring.value) {
       return
     }
 
@@ -804,7 +735,7 @@ const transferMoney =
 
     try {
       await $api.post(
-        '/organization_accounts/transfer',
+        '/personal_accounts/transfer',
         {
           from_account_id:
             fromAccountId,
@@ -866,7 +797,7 @@ const sendMessage =
     try {
       const response =
         await $api.post(
-          '/chat',
+          '/personal_chat',
           {
             message
           }
@@ -875,12 +806,12 @@ const sendMessage =
       messages.value.push({
         role: 'bot',
         text:
-          response.data.reply ||
+          response.data?.reply ||
           '回答を取得できませんでした。'
       })
 
       await scrollAllChatsToBottom()
-    } catch (error: any) {
+    } catch (error) {
       console.error(
         'BOTエラー:',
         error
@@ -889,7 +820,6 @@ const sendMessage =
       messages.value.push({
         role: 'bot',
         text:
-          error?.response?.data?.error ||
           'エラーが発生しました。'
       })
 
@@ -952,7 +882,8 @@ onMounted(
   border: 1px solid #e9edf5;
   border-radius: 18px;
   box-shadow:
-    0 6px 24px rgba(
+    0 6px 24px
+    rgba(
       20,
       30,
       55,
@@ -1130,11 +1061,13 @@ onMounted(
     ease-in-out;
 }
 
-.loading-dots span:nth-child(2) {
+.loading-dots
+span:nth-child(2) {
   animation-delay: 0.15s;
 }
 
-.loading-dots span:nth-child(3) {
+.loading-dots
+span:nth-child(3) {
   animation-delay: 0.3s;
 }
 

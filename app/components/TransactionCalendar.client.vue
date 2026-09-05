@@ -5,7 +5,6 @@
       :calendar-app="calendarApp"
     />
 
-    <!-- 家計簿モーダル -->
     <div
       v-if="showModal"
       class="modal-overlay"
@@ -31,7 +30,6 @@
         </div>
 
         <div class="modal-body">
-          <!-- 収支種別 -->
           <div class="form-group">
             <label>収支種別</label>
 
@@ -56,7 +54,6 @@
             </select>
           </div>
 
-          <!-- カテゴリー -->
           <div class="form-group">
             <label>カテゴリー</label>
 
@@ -134,7 +131,6 @@
             </select>
           </div>
 
-          <!-- 金額 -->
           <div class="form-group">
             <label>金額</label>
 
@@ -149,7 +145,6 @@
             />
           </div>
 
-          <!-- 日付 -->
           <div class="form-group">
             <label>日付</label>
 
@@ -163,10 +158,6 @@
             />
           </div>
 
-          <!-- =========================
-               収入
-               現金 / 口座
-          ========================== -->
           <div
             v-if="
               newTransaction.transaction_type ===
@@ -222,9 +213,6 @@
             </div>
           </div>
 
-          <!-- =========================
-               収入 + 口座
-          ========================== -->
           <div
             v-if="
               newTransaction.transaction_type ===
@@ -251,7 +239,7 @@
                 :key="account.id"
                 :value="account.id"
               >
-                {{ account.bank.name }} -
+                {{ account.bank?.name || '銀行' }} -
                 {{ account.account_number }}
                 (残高:
                 {{ account.balance }}円)
@@ -273,9 +261,6 @@
             </button>
           </div>
 
-          <!-- =========================
-               支出
-          ========================== -->
           <div
             v-if="
               newTransaction.transaction_type ===
@@ -310,9 +295,6 @@
             </select>
           </div>
 
-          <!-- =========================
-               支出 + 引き落とし
-          ========================== -->
           <div
             v-if="
               newTransaction.transaction_type ===
@@ -340,7 +322,7 @@
                 :key="account.id"
                 :value="account.id"
               >
-                {{ account.bank.name }} -
+                {{ account.bank?.name || '銀行' }} -
                 {{ account.account_number }}
                 (残高:
                 {{ account.balance }}円)
@@ -363,9 +345,7 @@
           </div>
         </div>
 
-        <!-- モーダル下部 -->
         <div class="modal-footer">
-          <!-- 編集モード時だけ削除 -->
           <button
             v-if="
               editingId &&
@@ -380,7 +360,6 @@
             削除
           </button>
 
-          <!-- 閉じる -->
           <button
             type="button"
             class="cancel-button"
@@ -389,7 +368,6 @@
             閉じる
           </button>
 
-          <!-- 閲覧モード -->
           <button
             v-if="
               editingId &&
@@ -402,7 +380,6 @@
             編集
           </button>
 
-          <!-- 編集モード -->
           <button
             v-else-if="
               editingId &&
@@ -417,7 +394,6 @@
             保存
           </button>
 
-          <!-- 新規追加 -->
           <button
             v-else
             type="button"
@@ -432,7 +408,6 @@
       </div>
     </div>
 
-    <!-- 口座登録モーダル -->
     <div
       v-if="showAccountModal"
       class="modal-overlay"
@@ -456,7 +431,6 @@
         </div>
 
         <div class="modal-body">
-          <!-- 銀行名 -->
           <div class="form-group">
             <label>銀行名</label>
 
@@ -479,7 +453,6 @@
             </select>
           </div>
 
-          <!-- 口座番号 -->
           <div class="form-group">
             <label>口座番号</label>
 
@@ -491,7 +464,6 @@
             />
           </div>
 
-          <!-- 初期残高 -->
           <div class="form-group">
             <label>初期残高</label>
 
@@ -557,22 +529,16 @@ import {
 import '@schedule-x/theme-default/dist/index.css'
 import 'temporal-polyfill/global'
 
-/* =========================
-   Props
-========================= */
-
 const props = withDefaults(
   defineProps<{
-    scope?: 'organization' | 'personal'
+    apiBasePath?: string
+    accountApiBasePath?: string
   }>(),
   {
-    scope: 'organization'
+    apiBasePath: '/organization_transactions',
+    accountApiBasePath: '/organization_accounts'
   }
 )
-
-/* =========================
-   型定義
-========================= */
 
 type Transaction = {
   id: number
@@ -586,12 +552,10 @@ type Transaction = {
   user_id?: number
   user_name?: string
   account_id?: number | null
-
   account?: {
     id: number
     account_number: string
     balance: number
-
     bank?: {
       id: number
       name: string
@@ -608,33 +572,19 @@ type Account = {
   id: number
   account_number: string
   balance: number
-
   bank: {
     id: number
     name: string
   }
 }
 
-/* =========================
-   API
-========================= */
-
-const { $api } =
-  useNuxtApp()
-
-/* =========================
-   カレンダー
-========================= */
+const { $api } = useNuxtApp()
 
 const calendarApp =
   shallowRef<any>(null)
 
 const eventsService =
   createEventsServicePlugin()
-
-/* =========================
-   データ
-========================= */
 
 const transactions =
   ref<Transaction[]>([])
@@ -644,10 +594,6 @@ const banks =
 
 const accounts =
   ref<Account[]>([])
-
-/* =========================
-   モーダル
-========================= */
 
 const showModal =
   ref(false)
@@ -661,27 +607,13 @@ const editingId =
 const isEditMode =
   ref(false)
 
-/* =========================
-   口座
-========================= */
-
 const selectedAccountId =
   ref<number | ''>('')
 
-/*
- * 収入の入金先
- *
- * cash    = 現金
- * account = 口座
- */
 const incomeSource =
   ref<
     'cash' | 'account'
   >('cash')
-
-/* =========================
-   家計簿フォーム
-========================= */
 
 const newTransaction =
   reactive({
@@ -692,20 +624,12 @@ const newTransaction =
     payment_method: ''
   })
 
-/* =========================
-   口座登録フォーム
-========================= */
-
 const newAccount =
   reactive({
     bank_id: '',
     account_number: '',
     balance: 0
   })
-
-/* =========================
-   カレンダーイベント生成
-========================= */
 
 const makeCalendarEvents =
   (
@@ -738,22 +662,12 @@ const makeCalendarEvents =
     )
   }
 
-/* =========================
-   取引取得
-========================= */
-
 const fetchTransactions =
   async () => {
     try {
       const response =
-        await $api.get(
-          '/transactions',
-          {
-            params: {
-              transaction_scope:
-                props.scope
-            }
-          }
+        await $api.get<Transaction[]>(
+          props.apiBasePath
         )
 
       transactions.value =
@@ -768,13 +682,11 @@ const fetchTransactions =
         error
       )
 
+      transactions.value = []
+
       return []
     }
   }
-
-/* =========================
-   銀行取得
-========================= */
 
 const fetchBanks =
   async () => {
@@ -785,40 +697,36 @@ const fetchBanks =
         )
 
       banks.value =
-        response.data
+        response.data || []
     } catch (error) {
       console.error(
         '銀行データの取得に失敗しました:',
         error
       )
+
+      banks.value = []
     }
   }
-
-/* =========================
-   口座取得
-========================= */
 
 const fetchAccounts =
   async () => {
     try {
       const response =
         await $api.get<Account[]>(
-          '/accounts'
+          props.accountApiBasePath
         )
 
       accounts.value =
-        response.data
+        response.data || []
     } catch (error) {
       console.error(
         '口座データの取得に失敗しました:',
         error
       )
+
+      accounts.value = []
     }
   }
-
-/* =========================
-   フォーム初期化
-========================= */
 
 const resetForm = () => {
   editingId.value =
@@ -845,16 +753,9 @@ const resetForm = () => {
   selectedAccountId.value =
     ''
 
-  /*
-   * 新規登録時は現金
-   */
   incomeSource.value =
     'cash'
 }
-
-/* =========================
-   収入の入金先切り替え
-========================= */
 
 const setIncomeSource =
   (
@@ -864,9 +765,6 @@ const setIncomeSource =
     incomeSource.value =
       source
 
-    /*
-     * 現金なら口座を解除
-     */
     if (
       source === 'cash'
     ) {
@@ -876,11 +774,6 @@ const setIncomeSource =
       return
     }
 
-    /*
-     * 口座を選択したとき、
-     * まだ選択されていなければ
-     * 最初の口座を選択
-     */
     if (
       accounts.value.length > 0 &&
       selectedAccountId.value === ''
@@ -889,10 +782,6 @@ const setIncomeSource =
         accounts.value[0].id
     }
   }
-
-/* =========================
-   日付クリック
-========================= */
 
 const openModalForDate =
   (
@@ -906,10 +795,6 @@ const openModalForDate =
     showModal.value =
       true
   }
-
-/* =========================
-   取引クリック
-========================= */
 
 const openModalForEvent =
   (event: any) => {
@@ -952,15 +837,6 @@ const openModalForEvent =
       transaction.account_id ??
       ''
 
-    /*
-     * 収入の場合
-     *
-     * account_idあり
-     * → 口座
-     *
-     * account_idなし
-     * → 現金
-     */
     if (
       transaction.transaction_type ===
       'income'
@@ -978,18 +854,10 @@ const openModalForEvent =
       true
   }
 
-/* =========================
-   編集開始
-========================= */
-
 const startEdit = () => {
   isEditMode.value =
     true
 }
-
-/* =========================
-   モーダルを閉じる
-========================= */
 
 const closeModal = () => {
   showModal.value =
@@ -997,10 +865,6 @@ const closeModal = () => {
 
   resetForm()
 }
-
-/* =========================
-   口座登録モーダル
-========================= */
 
 const openAccountModal =
   () => {
@@ -1013,10 +877,6 @@ const closeAccountModal =
     showAccountModal.value =
       false
   }
-
-/* =========================
-   口座作成
-========================= */
 
 const createAccount =
   async () => {
@@ -1033,7 +893,7 @@ const createAccount =
 
     try {
       await $api.post(
-        '/accounts',
+        props.accountApiBasePath,
         {
           account: {
             bank_id:
@@ -1075,10 +935,6 @@ const createAccount =
     }
   }
 
-/* =========================
-   バリデーション
-========================= */
-
 const validateTransaction =
   () => {
     if (
@@ -1114,9 +970,6 @@ const validateTransaction =
       return false
     }
 
-    /*
-     * 収入
-     */
     if (
       newTransaction.transaction_type ===
       'income'
@@ -1124,17 +977,9 @@ const validateTransaction =
       newTransaction.category =
         '収入'
 
-      /*
-       * 収入では支払方法を
-       * 使用しない
-       */
       newTransaction.payment_method =
         '-'
 
-      /*
-       * 口座を選択している場合のみ
-       * account_idが必要
-       */
       if (
         incomeSource.value ===
           'account' &&
@@ -1148,9 +993,6 @@ const validateTransaction =
       }
     }
 
-    /*
-     * 支出カテゴリー
-     */
     if (
       newTransaction.transaction_type ===
         'expense' &&
@@ -1163,9 +1005,6 @@ const validateTransaction =
       return false
     }
 
-    /*
-     * 支出の支払方法
-     */
     if (
       newTransaction.transaction_type ===
         'expense' &&
@@ -1178,9 +1017,6 @@ const validateTransaction =
       return false
     }
 
-    /*
-     * 支出 + 引き落とし
-     */
     if (
       newTransaction.transaction_type ===
         'expense' &&
@@ -1198,10 +1034,6 @@ const validateTransaction =
     return true
   }
 
-/* =========================
-   保存
-========================= */
-
 const saveTransaction =
   async () => {
     if (
@@ -1211,18 +1043,6 @@ const saveTransaction =
     }
 
     try {
-      /*
-       * account_id決定
-       *
-       * 収入
-       *   現金   → null
-       *   口座   → selectedAccountId
-       *
-       * 支出
-       *   現金       → null
-       *   クレジット → null
-       *   引き落とし → selectedAccountId
-       */
       let accountId:
         number | null = null
 
@@ -1240,9 +1060,6 @@ const saveTransaction =
                   selectedAccountId.value
                 )
               : null
-        } else {
-          accountId =
-            null
         }
       }
 
@@ -1263,45 +1080,32 @@ const saveTransaction =
       const payload = {
         transaction: {
           ...newTransaction,
-
+          amount:
+            Number(
+              newTransaction.amount
+            ),
           account_id:
-            accountId,
-
-          transaction_scope:
-            props.scope
+            accountId
         }
       }
-
-      /* =========================
-         編集
-      ========================== */
 
       if (
         editingId.value
       ) {
         await $api.patch(
-          `/transactions/${editingId.value}`,
+          `${props.apiBasePath}/${editingId.value}`,
           payload
         )
 
         alert(
           '更新しました'
         )
-      }
-
-      /* =========================
-         新規登録
-      ========================== */
-
-      else {
+      } else {
         await $api.post(
-          '/transactions',
+          props.apiBasePath,
           payload
         )
 
-        /*
-         * 収入 + 口座
-         */
         if (
           newTransaction.transaction_type ===
             'income' &&
@@ -1310,7 +1114,7 @@ const saveTransaction =
           selectedAccountId.value
         ) {
           await $api.patch(
-            `/accounts/${selectedAccountId.value}/add_balance`,
+            `${props.accountApiBasePath}/${selectedAccountId.value}/add_balance`,
             {
               amount:
                 Number(
@@ -1320,9 +1124,6 @@ const saveTransaction =
           )
         }
 
-        /*
-         * 支出 + 引き落とし
-         */
         if (
           newTransaction.transaction_type ===
             'expense' &&
@@ -1331,7 +1132,7 @@ const saveTransaction =
           selectedAccountId.value
         ) {
           await $api.patch(
-            `/accounts/${selectedAccountId.value}/subtract_balance`,
+            `${props.accountApiBasePath}/${selectedAccountId.value}/subtract_balance`,
             {
               amount:
                 Number(
@@ -1347,7 +1148,6 @@ const saveTransaction =
       }
 
       await fetchTransactions()
-
       await fetchAccounts()
 
       closeModal()
@@ -1368,10 +1168,6 @@ const saveTransaction =
     }
   }
 
-/* =========================
-   削除
-========================= */
-
 const deleteTransaction =
   async () => {
     if (
@@ -1391,7 +1187,7 @@ const deleteTransaction =
 
     try {
       await $api.delete(
-        `/transactions/${editingId.value}`
+        `${props.apiBasePath}/${editingId.value}`
       )
 
       alert(
@@ -1399,7 +1195,6 @@ const deleteTransaction =
       )
 
       await fetchTransactions()
-
       await fetchAccounts()
 
       closeModal()
@@ -1411,10 +1206,6 @@ const deleteTransaction =
       )
     }
   }
-
-/* =========================
-   初期表示
-========================= */
 
 onMounted(async () => {
   try {
@@ -1561,11 +1352,6 @@ onMounted(async () => {
   font-size: 16px;
 }
 
-/* =========================
-   収入
-   現金 / 口座スイッチ
-========================= */
-
 .income-source-switch {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1616,10 +1402,6 @@ onMounted(async () => {
 .income-source-switch.disabled {
   opacity: 0.85;
 }
-
-/* =========================
-   フッター
-========================= */
 
 .modal-footer {
   display: flex;
