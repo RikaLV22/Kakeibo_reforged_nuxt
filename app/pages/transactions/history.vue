@@ -52,7 +52,6 @@
           v-if="hasHistoryData"
           class="history-content"
         >
-          <!-- サマリー -->
           <section class="summary-grid">
             <div class="summary-card">
               <span class="summary-label">
@@ -90,8 +89,10 @@
               <strong
                 class="summary-value"
                 :class="{
-                  positive: organization.total.balance >= 0,
-                  negative: organization.total.balance < 0
+                  positive:
+                    organization.total.balance >= 0,
+                  negative:
+                    organization.total.balance < 0
                 }"
               >
                 ¥{{ formatNumber(organization.total.balance) }}
@@ -129,7 +130,6 @@
             </div>
           </section>
 
-          <!-- 月別収支 -->
           <section class="dashboard-card large-card">
             <div class="card-header">
               <div>
@@ -146,7 +146,6 @@
             />
           </section>
 
-          <!-- ユーザごとの収支 -->
           <section class="dashboard-card large-card">
             <div class="card-header">
               <div>
@@ -163,7 +162,6 @@
             />
           </section>
 
-          <!-- 支出カテゴリ / 月別支出 -->
           <div class="two-column">
             <section class="dashboard-card">
               <div class="card-header">
@@ -219,7 +217,6 @@
             </section>
           </div>
 
-          <!-- 取引一覧 -->
           <section class="dashboard-card large-card">
             <div class="card-header">
               <div>
@@ -277,7 +274,11 @@
                     v-for="transaction in monthlyTransactions"
                     :key="transaction.id"
                     class="transaction-row"
-                    @click="openTransactionModal(transaction)"
+                    @click="
+                      openTransactionModal(
+                        transaction
+                      )
+                    "
                   >
                     <td>
                       {{ formatDate(transaction.date) }}
@@ -290,10 +291,13 @@
                     <td>
                       <span
                         class="type-badge"
-                        :class="transaction.transaction_type"
+                        :class="
+                          transaction.transaction_type
+                        "
                       >
                         {{
-                          transaction.transaction_type === 'income'
+                          transaction.transaction_type ===
+                          'income'
                             ? '収入'
                             : '支出'
                         }}
@@ -306,17 +310,27 @@
 
                     <td
                       class="amount-cell"
-                      :class="transaction.transaction_type"
+                      :class="
+                        transaction.transaction_type
+                      "
                     >
                       {{
-                        transaction.transaction_type === 'income'
+                        transaction.transaction_type ===
+                        'income'
                           ? '+'
                           : '-'
-                      }}¥{{ formatNumber(transaction.amount) }}
+                      }}¥{{
+                        formatNumber(
+                          transaction.amount
+                        )
+                      }}
                     </td>
 
                     <td>
-                      {{ transaction.payment_method || '-' }}
+                      {{
+                        transaction.payment_method ||
+                        '-'
+                      }}
                     </td>
                   </tr>
                 </tbody>
@@ -357,7 +371,6 @@
       </template>
     </div>
 
-    <!-- 取引詳細モーダル -->
     <Teleport to="body">
       <div
         v-if="selectedTransaction"
@@ -391,7 +404,11 @@
               </span>
 
               <span class="detail-value">
-                {{ formatDate(selectedTransaction.date) }}
+                {{
+                  formatDate(
+                    selectedTransaction.date
+                  )
+                }}
               </span>
             </div>
 
@@ -401,7 +418,9 @@
               </span>
 
               <span class="detail-value">
-                {{ selectedTransaction.user_name }}
+                {{
+                  selectedTransaction.user_name
+                }}
               </span>
             </div>
 
@@ -413,10 +432,13 @@
               <span class="detail-value">
                 <span
                   class="type-badge"
-                  :class="selectedTransaction.transaction_type"
+                  :class="
+                    selectedTransaction.transaction_type
+                  "
                 >
                   {{
-                    selectedTransaction.transaction_type === 'income'
+                    selectedTransaction.transaction_type ===
+                    'income'
                       ? '収入'
                       : '支出'
                   }}
@@ -430,7 +452,9 @@
               </span>
 
               <span class="detail-value">
-                {{ selectedTransaction.category }}
+                {{
+                  selectedTransaction.category
+                }}
               </span>
             </div>
 
@@ -441,10 +465,13 @@
 
               <span
                 class="detail-value detail-amount"
-                :class="selectedTransaction.transaction_type"
+                :class="
+                  selectedTransaction.transaction_type
+                "
               >
                 {{
-                  selectedTransaction.transaction_type === 'income'
+                  selectedTransaction.transaction_type ===
+                  'income'
                     ? '+'
                     : '-'
                 }}¥{{
@@ -456,27 +483,35 @@
             </div>
 
             <div class="detail-row">
-                <span class="detail-label">
-                    口座名
-                </span>
+              <span class="detail-label">
+                口座名
+              </span>
 
-                <span class="detail-value">
-                    {{ selectedTransaction.account_name || '-' }}
-                </span>
-                </div>
+              <span class="detail-value">
+                {{
+                  selectedTransaction.account_name ||
+                  '-'
+                }}
+              </span>
+            </div>
 
-                <div class="detail-row">
-                <span class="detail-label">
-                    口座番号
-                </span>
+            <div class="detail-row">
+              <span class="detail-label">
+                口座番号
+              </span>
 
-                <span class="detail-value">
-                    {{ selectedTransaction.account_number || '-' }}
-                </span>
-                </div>
+              <span class="detail-value">
+                {{
+                  selectedTransaction.account_number ||
+                  '-'
+                }}
+              </span>
+            </div>
 
             <div
-              v-if="selectedTransaction.card_number"
+              v-if="
+                selectedTransaction.card_number
+              "
               class="detail-row"
             >
               <span class="detail-label">
@@ -484,7 +519,9 @@
               </span>
 
               <span class="detail-value">
-                {{ selectedTransaction.card_number }}
+                {{
+                  selectedTransaction.card_number
+                }}
               </span>
             </div>
           </div>
@@ -493,7 +530,9 @@
             <button
               type="button"
               class="modal-button"
-              @click="closeTransactionModal"
+              @click="
+                closeTransactionModal
+              "
             >
               閉じる
             </button>
@@ -516,7 +555,8 @@ import OrganizationBalanceChart from '~/components/OrganizationBalanceChart.clie
 import ExpenseCategoryChart from '~/components/ExpenseCategoryChart.client.vue'
 import UserHistoryChart from '~/components/UserHistoryChart.client.vue'
 
-const { $api } = useNuxtApp()
+const { $api } =
+  useNuxtApp()
 
 interface PeriodSummary {
   income: number
@@ -551,7 +591,9 @@ interface UserMonthlySummary {
 interface Transaction {
   id: number
   user_name: string
-  transaction_type: 'income' | 'expense'
+  transaction_type:
+    | 'income'
+    | 'expense'
   category: string
   amount: number
   date: string
@@ -571,201 +613,267 @@ interface HistoryResponse {
   transactions: Transaction[]
 }
 
-const currentYear = new Date().getFullYear()
+const currentYear =
+  new Date().getFullYear()
 
-const selectedYear = ref(currentYear)
+const selectedYear =
+  ref(currentYear)
 
-const selectedMonth = ref(
-  new Date().getMonth() + 1
-)
+const selectedMonth =
+  ref(
+    new Date().getMonth() + 1
+  )
 
-const isLoading = ref(false)
+const isLoading =
+  ref(false)
 
 const selectedTransaction =
-  ref<Transaction | null>(null)
-
-const organization = ref<SummarySection>({
-  total: {
-    income: 0,
-    expense: 0,
-    balance: 0
-  },
-
-  monthly: [],
-
-  category_expense: []
-})
-
-const organizationMember = ref<SummarySection>({
-  total: {
-    income: 0,
-    expense: 0,
-    balance: 0
-  },
-
-  monthly: [],
-
-  category_expense: []
-})
-
-const users = ref<UserMonthlySummary[]>([])
-
-const transactions = ref<Transaction[]>([])
-
-const availableYears = computed(() => {
-  const years: number[] = []
-
-  for (
-    let year = currentYear;
-    year >= currentYear - 10;
-    year--
-  ) {
-    years.push(year)
-  }
-
-  return years
-})
-
-const hasHistoryData = computed(() => {
-  return (
-    transactions.value.length > 0 ||
-    organization.value.total.income > 0 ||
-    organization.value.total.expense > 0
+  ref<Transaction | null>(
+    null
   )
-})
 
-const monthlyTransactions = computed(() => {
-  return transactions.value.filter(
-    transaction => {
-      const date = new Date(
-        `${transaction.date}T00:00:00`
-      )
+const organization =
+  ref<SummarySection>({
+    total: {
+      income: 0,
+      expense: 0,
+      balance: 0
+    },
 
-      return (
-        date.getMonth() + 1 ===
-        selectedMonth.value
-      )
+    monthly: [],
+
+    category_expense: []
+  })
+
+const organizationMember =
+  ref<SummarySection>({
+    total: {
+      income: 0,
+      expense: 0,
+      balance: 0
+    },
+
+    monthly: [],
+
+    category_expense: []
+  })
+
+const users =
+  ref<UserMonthlySummary[]>(
+    []
+  )
+
+const transactions =
+  ref<Transaction[]>([])
+
+const availableYears =
+  computed(() => {
+    const years: number[] = []
+
+    for (
+      let year = currentYear;
+      year >= currentYear - 10;
+      year--
+    ) {
+      years.push(year)
     }
-  )
-})
 
-const formatNumber = (value: number) => {
-  return new Intl.NumberFormat(
-    'ja-JP'
-  ).format(value || 0)
-}
+    return years
+  })
 
-const formatDate = (date: string) => {
-  const value = new Date(
-    `${date}T00:00:00`
-  )
+const hasHistoryData =
+  computed(() => {
+    return (
+      transactions.value.length > 0 ||
+      organization.value.total.income > 0 ||
+      organization.value.total.expense > 0
+    )
+  })
 
-  return `${value.getFullYear()}/${String(
-    value.getMonth() + 1
-  ).padStart(2, '0')}/${String(
-    value.getDate()
-  ).padStart(2, '0')}`
-}
+const monthlyTransactions =
+  computed(() => {
+    return transactions.value.filter(
+      transaction => {
+        const date =
+          new Date(
+            `${transaction.date}T00:00:00`
+          )
 
-const monthlyExpensePercentage = (
-  expense: number
-) => {
-  const maxExpense = Math.max(
-    ...organization.value.monthly.map(
-      item => Number(item.expense)
-    ),
-    1
-  )
-
-  return Math.round(
-    (Number(expense) / maxExpense) * 100
-  )
-}
-
-const openTransactionModal = (
-  transaction: Transaction
-) => {
-  selectedTransaction.value =
-    transaction
-}
-
-const closeTransactionModal = () => {
-  selectedTransaction.value = null
-}
-
-const fetchHistory = async () => {
-  isLoading.value = true
-
-  try {
-    const response = await $api.get(
-      '/organization_transactions/history_summary',
-      {
-        params: {
-          year: selectedYear.value
-        }
+        return (
+          date.getMonth() + 1 ===
+          selectedMonth.value
+        )
       }
     )
+  })
 
-    const data =
-      response.data as unknown as HistoryResponse
-
-    organization.value =
-      data.organization
-
-    organizationMember.value =
-      data.organization_member
-
-    users.value =
-      data.users || []
-
-    transactions.value =
-      data.transactions || []
-  } catch (error) {
-    console.error(
-      '過去データの取得に失敗しました:',
-      error
+const formatNumber =
+  (value: number) => {
+    return new Intl.NumberFormat(
+      'ja-JP'
+    ).format(
+      value || 0
     )
-
-    organization.value = {
-      total: {
-        income: 0,
-        expense: 0,
-        balance: 0
-      },
-
-      monthly: [],
-
-      category_expense: []
-    }
-
-    organizationMember.value = {
-      total: {
-        income: 0,
-        expense: 0,
-        balance: 0
-      },
-
-      monthly: [],
-
-      category_expense: []
-    }
-
-    users.value = []
-
-    transactions.value = []
-  } finally {
-    isLoading.value = false
   }
-}
 
-onMounted(async () => {
-  await fetchHistory()
-})
+const formatDate =
+  (date: string) => {
+    const value =
+      new Date(
+        `${date}T00:00:00`
+      )
+
+    return `${value.getFullYear()}/${String(
+      value.getMonth() + 1
+    ).padStart(2, '0')}/${String(
+      value.getDate()
+    ).padStart(2, '0')}`
+  }
+
+const monthlyExpensePercentage =
+  (
+    expense: number
+  ) => {
+    const maxExpense =
+      Math.max(
+        ...organization.value.monthly.map(
+          item =>
+            Number(
+              item.expense
+            )
+        ),
+        1
+      )
+
+    return Math.round(
+      (Number(expense) /
+        maxExpense) *
+      100
+    )
+  }
+
+const getSelectedOrganizationId =
+  () => {
+    if (!import.meta.client) {
+      return null
+    }
+
+    const value =
+      localStorage.getItem(
+        'selectedOrganizationId'
+      )
+
+    if (!value) {
+      return null
+    }
+
+    const id =
+      Number(value)
+
+    return Number.isFinite(id)
+      ? id
+      : null
+  }
+
+const openTransactionModal =
+  (
+    transaction: Transaction
+  ) => {
+    selectedTransaction.value =
+      transaction
+  }
+
+const closeTransactionModal =
+  () => {
+    selectedTransaction.value =
+      null
+  }
+
+const fetchHistory =
+  async () => {
+    isLoading.value =
+      true
+
+    try {
+      const response =
+        await $api.get(
+          '/organization_transactions/history_summary',
+          {
+            params: {
+              year:
+                selectedYear.value,
+
+              organization_id:
+                getSelectedOrganizationId()
+            }
+          }
+        )
+
+      const data =
+        response.data as
+        unknown as HistoryResponse
+
+      organization.value =
+        data.organization
+
+      organizationMember.value =
+        data.organization_member
+
+      users.value =
+        data.users || []
+
+      transactions.value =
+        data.transactions || []
+    } catch (error) {
+      console.error(
+        '過去データの取得に失敗しました:',
+        error
+      )
+
+      organization.value = {
+        total: {
+          income: 0,
+          expense: 0,
+          balance: 0
+        },
+
+        monthly: [],
+
+        category_expense: []
+      }
+
+      organizationMember.value = {
+        total: {
+          income: 0,
+          expense: 0,
+          balance: 0
+        },
+
+        monthly: [],
+
+        category_expense: []
+      }
+
+      users.value = []
+
+      transactions.value = []
+    } finally {
+      isLoading.value =
+        false
+    }
+  }
+
+onMounted(
+  async () => {
+    await fetchHistory()
+  }
+)
 
 watch(
   selectedYear,
   async () => {
-    selectedMonth.value = 1
+    selectedMonth.value =
+      1
 
     closeTransactionModal()
 
@@ -861,10 +969,11 @@ body {
 
 .summary-grid {
   display: grid;
-  grid-template-columns: repeat(
-    4,
-    minmax(0, 1fr)
-  );
+  grid-template-columns:
+    repeat(
+      4,
+      minmax(0, 1fr)
+    );
   gap: 14px;
   margin-bottom: 16px;
 }
@@ -876,7 +985,8 @@ body {
   border-radius: 16px;
   background: #fff;
   box-shadow:
-    0 6px 24px rgba(
+    0 6px 24px
+    rgba(
       20,
       30,
       55,
@@ -923,7 +1033,8 @@ body {
   border-radius: 18px;
   background: #fff;
   box-shadow:
-    0 6px 24px rgba(
+    0 6px 24px
+    rgba(
       20,
       30,
       55,
@@ -961,10 +1072,11 @@ body {
 
 .two-column {
   display: grid;
-  grid-template-columns: repeat(
-    2,
-    minmax(0, 1fr)
-  );
+  grid-template-columns:
+    repeat(
+      2,
+      minmax(0, 1fr)
+    );
   gap: 24px;
   align-items: stretch;
   margin-bottom: 24px;
@@ -1060,7 +1172,6 @@ body {
   font-weight: 700;
 }
 
-/* 取引一覧 */
 .transaction-table-wrap {
   width: 100%;
   overflow-x: auto;
@@ -1110,7 +1221,6 @@ body {
   background: #f8fafc;
 }
 
-/* 列幅 */
 .transaction-table th:nth-child(1),
 .transaction-table td:nth-child(1) {
   width: 14%;
@@ -1172,7 +1282,6 @@ body {
   color: #dc2626;
 }
 
-/* 取引詳細モーダル */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -1201,7 +1310,8 @@ body {
   border-radius: 20px;
   background: #fff;
   box-shadow:
-    0 20px 60px rgba(
+    0 20px 60px
+    rgba(
       15,
       23,
       42,
@@ -1356,7 +1466,8 @@ body {
   border-radius: 18px;
   background: #fff;
   box-shadow:
-    0 6px 24px rgba(
+    0 6px 24px
+    rgba(
       20,
       30,
       55,

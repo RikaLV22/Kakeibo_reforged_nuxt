@@ -253,9 +253,7 @@
               "
               type="button"
               class="account-button"
-              @click="
-                openAccountModal
-              "
+              @click="openAccountModal"
             >
               口座を追加
             </button>
@@ -336,9 +334,7 @@
               "
               type="button"
               class="account-button"
-              @click="
-                openAccountModal
-              "
+              @click="openAccountModal"
             >
               口座を追加
             </button>
@@ -353,9 +349,7 @@
             "
             type="button"
             class="delete-button"
-            @click="
-              deleteTransaction
-            "
+            @click="deleteTransaction"
           >
             削除
           </button>
@@ -387,9 +381,7 @@
             "
             type="button"
             class="submit-button"
-            @click="
-              saveTransaction
-            "
+            @click="saveTransaction"
           >
             保存
           </button>
@@ -398,9 +390,7 @@
             v-else
             type="button"
             class="submit-button"
-            @click="
-              saveTransaction
-            "
+            @click="saveTransaction"
           >
             追加
           </button>
@@ -411,9 +401,7 @@
     <div
       v-if="showAccountModal"
       class="modal-overlay"
-      @click.self="
-        closeAccountModal
-      "
+      @click.self="closeAccountModal"
     >
       <div class="transaction-modal">
         <div class="modal-header">
@@ -422,9 +410,7 @@
           <button
             type="button"
             class="close-button"
-            @click="
-              closeAccountModal
-            "
+            @click="closeAccountModal"
           >
             ×
           </button>
@@ -435,9 +421,7 @@
             <label>銀行名</label>
 
             <select
-              v-model="
-                newAccount.bank_id
-              "
+              v-model="newAccount.bank_id"
             >
               <option value="">
                 選択してください
@@ -457,9 +441,7 @@
             <label>口座番号</label>
 
             <input
-              v-model="
-                newAccount.account_number
-              "
+              v-model="newAccount.account_number"
               type="text"
             />
           </div>
@@ -468,9 +450,7 @@
             <label>初期残高</label>
 
             <input
-              v-model.number="
-                newAccount.balance
-              "
+              v-model.number="newAccount.balance"
               type="number"
             />
           </div>
@@ -480,9 +460,7 @@
           <button
             type="button"
             class="cancel-button"
-            @click="
-              closeAccountModal
-            "
+            @click="closeAccountModal"
           >
             閉じる
           </button>
@@ -490,9 +468,7 @@
           <button
             type="button"
             class="submit-button"
-            @click="
-              createAccount
-            "
+            @click="createAccount"
           >
             登録
           </button>
@@ -631,6 +607,29 @@ const newAccount =
     balance: 0
   })
 
+const getSelectedOrganizationId =
+  () => {
+    if (!import.meta.client) {
+      return null
+    }
+
+    const value =
+      localStorage.getItem(
+        'selectedOrganizationId'
+      )
+
+    if (!value) {
+      return null
+    }
+
+    const id =
+      Number(value)
+
+    return Number.isFinite(id)
+      ? id
+      : null
+  }
+
 const makeCalendarEvents =
   (
     transactionList:
@@ -667,7 +666,13 @@ const fetchTransactions =
     try {
       const response =
         await $api.get<Transaction[]>(
-          props.apiBasePath
+          props.apiBasePath,
+          {
+            params: {
+              organization_id:
+                getSelectedOrganizationId()
+            }
+          }
         )
 
       transactions.value =
@@ -713,7 +718,13 @@ const fetchAccounts =
     try {
       const response =
         await $api.get<Account[]>(
-          props.accountApiBasePath
+          props.accountApiBasePath,
+          {
+            params: {
+              organization_id:
+                getSelectedOrganizationId()
+            }
+          }
         )
 
       accounts.value =
@@ -907,6 +918,12 @@ const createAccount =
                 newAccount.balance
               )
           }
+        },
+        {
+          params: {
+            organization_id:
+              getSelectedOrganizationId()
+          }
         }
       )
 
@@ -1089,12 +1106,21 @@ const saveTransaction =
         }
       }
 
+      const organizationId =
+        getSelectedOrganizationId()
+
       if (
         editingId.value
       ) {
         await $api.patch(
           `${props.apiBasePath}/${editingId.value}`,
-          payload
+          payload,
+          {
+            params: {
+              organization_id:
+                organizationId
+            }
+          }
         )
 
         alert(
@@ -1103,7 +1129,13 @@ const saveTransaction =
       } else {
         await $api.post(
           props.apiBasePath,
-          payload
+          payload,
+          {
+            params: {
+              organization_id:
+                organizationId
+            }
+          }
         )
 
         if (
@@ -1120,6 +1152,12 @@ const saveTransaction =
                 Number(
                   newTransaction.amount
                 )
+            },
+            {
+              params: {
+                organization_id:
+                  organizationId
+              }
             }
           )
         }
@@ -1138,6 +1176,12 @@ const saveTransaction =
                 Number(
                   newTransaction.amount
                 )
+            },
+            {
+              params: {
+                organization_id:
+                  organizationId
+              }
             }
           )
         }
@@ -1187,7 +1231,13 @@ const deleteTransaction =
 
     try {
       await $api.delete(
-        `${props.apiBasePath}/${editingId.value}`
+        `${props.apiBasePath}/${editingId.value}`,
+        {
+          params: {
+            organization_id:
+              getSelectedOrganizationId()
+          }
+        }
       )
 
       alert(
