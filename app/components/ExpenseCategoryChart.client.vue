@@ -1,49 +1,68 @@
 <template>
-  <div class="category-chart">
-    <div class="chart-area">
-      <ClientOnly>
-        <ApexChart
-          type="donut"
-          height="280"
-          :options="chartOptions"
-          :series="chartSeries"
-        />
-      </ClientOnly>
-    </div>
+  <div class="category-chart-wrapper">
 
-    <div class="category-list">
-      <div
-        v-for="(item, index) in data"
-        :key="item.category"
-        class="category-item"
-      >
-        <div class="category-left">
-          <span
-            class="category-dot"
-            :style="{ background: chartColors[index % chartColors.length] }"
-          ></span>
+    <div class="category-chart">
+      <div class="chart-area">
+        <ClientOnly>
+          <ApexChart
+            type="donut"
+            height="280"
+            :options="chartOptions"
+            :series="chartSeries"
+          />
+        </ClientOnly>
+      </div>
 
-          <div class="category-info">
-            <span class="category-name">
-              {{ item.category }}
-            </span>
+      <div class="category-list">
+        <div
+          v-for="(item, index) in data"
+          :key="item.category"
+          class="category-item"
+        >
+          <div class="category-left">
+            <span
+              class="category-dot"
+              :style="{
+                background:
+                  chartColors[
+                    index %
+                      chartColors.length
+                  ]
+              }"
+            ></span>
 
-            <span class="category-percent">
-              {{ getPercentage(item.amount) }}%
-            </span>
+            <div class="category-info">
+              <span class="category-name">
+                {{ item.category }}
+              </span>
+
+              <span class="category-percent">
+                {{ getPercentage(item.amount) }}%
+              </span>
+            </div>
           </div>
+
+          <span class="category-amount">
+            ¥{{ formatNumber(item.amount) }}
+          </span>
         </div>
 
-        <span class="category-amount">
-          ¥{{ formatNumber(item.amount) }}
-        </span>
+        <div
+          v-if="data.length === 0"
+          class="no-data"
+        >
+          <span>データがありません</span>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import {
+  computed
+} from 'vue'
+
 import VueApexCharts from 'vue3-apexcharts'
 
 const ApexChart = VueApexCharts
@@ -53,9 +72,79 @@ interface CategoryExpense {
   amount: number
 }
 
+type Period =
+  | 'all'
+  | 'year'
+  | 'month'
+  | 'week'
+  | 'today'
+
 const props = defineProps<{
   data: CategoryExpense[]
+  modelValue?: Period
 }>()
+
+const emit = defineEmits<{
+  (
+    e: 'update:modelValue',
+    value: Period
+  ): void
+  (
+    e: 'period-change',
+    value: Period
+  ): void
+}>()
+
+const period =
+  computed<Period>({
+    get: () => {
+      return (
+        props.modelValue ||
+        'all'
+      )
+    },
+
+    set: value => {
+      emit(
+        'update:modelValue',
+        value
+      )
+    }
+  })
+
+const periodOptions = [
+  {
+    label: '全期間',
+    value: 'all' as const
+  },
+  {
+    label: '今年',
+    value: 'year' as const
+  },
+  {
+    label: '今月',
+    value: 'month' as const
+  },
+  {
+    label: '今週',
+    value: 'week' as const
+  },
+  {
+    label: '今日',
+    value: 'today' as const
+  }
+]
+
+const changePeriod = (
+  value: Period
+) => {
+  period.value = value
+
+  emit(
+    'period-change',
+    value
+  )
+}
 
 const chartColors = [
   '#3B82F6',
@@ -70,117 +159,166 @@ const chartColors = [
   '#6366F1'
 ]
 
-const formatNumber = (value: number) => {
-  return new Intl.NumberFormat('ja-JP').format(value || 0)
+const formatNumber = (
+  value: number
+) => {
+  return new Intl.NumberFormat(
+    'ja-JP'
+  ).format(
+    value || 0
+  )
 }
 
-const totalExpense = computed(() => {
-  return props.data.reduce(
-    (sum, item) => sum + Number(item.amount),
-    0
-  )
-})
+const totalExpense =
+  computed(() => {
+    return props.data.reduce(
+      (sum, item) =>
+        sum +
+        Number(
+          item.amount
+        ),
+      0
+    )
+  })
 
-const chartSeries = computed(() => {
-  return props.data.map(item => Number(item.amount))
-})
+const chartSeries =
+  computed(() => {
+    return props.data.map(
+      item =>
+        Number(
+          item.amount
+        )
+    )
+  })
 
-const getPercentage = (amount: number) => {
-  if (!totalExpense.value) {
+const getPercentage = (
+  amount: number
+) => {
+  if (
+    !totalExpense.value
+  ) {
     return 0
   }
 
   return Math.round(
-    (Number(amount) / totalExpense.value) * 100
+    (
+      Number(amount) /
+      totalExpense.value
+    ) *
+      100
   )
 }
 
-const chartOptions = computed(() => ({
-  chart: {
-    type: 'donut' as const,
-    toolbar: {
+const chartOptions =
+  computed(() => ({
+    chart: {
+      type: 'donut' as const,
+      toolbar: {
+        show: false
+      }
+    },
+
+    labels:
+      props.data.map(
+        item =>
+          item.category
+      ),
+
+    colors:
+      chartColors,
+
+    legend: {
       show: false
-    }
-  },
+    },
 
-  labels: props.data.map(item => item.category),
+    stroke: {
+      width: 3,
+      colors: [
+        '#ffffff'
+      ]
+    },
 
-  colors: chartColors,
+    dataLabels: {
+      enabled: false
+    },
 
-  legend: {
-    show: false
-  },
+    plotOptions: {
+      pie: {
+        expandOnClick: false,
 
-  stroke: {
-    width: 3,
-    colors: ['#ffffff']
-  },
+        donut: {
+          size: '72%',
 
-  dataLabels: {
-    enabled: false
-  },
-
-  plotOptions: {
-    pie: {
-      expandOnClick: false,
-
-      donut: {
-        size: '72%',
-
-        labels: {
-          show: true,
-
-          name: {
+          labels: {
             show: true,
-            offsetY: -4,
-            color: '#94a3b8',
-            fontSize: '11px',
-            fontWeight: 600
-          },
 
-          value: {
-            show: true,
-            offsetY: 8,
-            color: '#111827',
-            fontSize: '20px',
-            fontWeight: 800,
+            name: {
+              show: true,
+              offsetY: -4,
+              color: '#94a3b8',
+              fontSize: '11px',
+              fontWeight: 600
+            },
 
-            formatter: (value: string) => {
-              return `¥${formatNumber(Number(value))}`
-            }
-          },
+            value: {
+              show: true,
+              offsetY: 8,
+              color: '#111827',
+              fontSize: '20px',
+              fontWeight: 800,
 
-          total: {
-            show: true,
-            showAlways: true,
-            label: '総支出',
-            color: '#94a3b8',
-            fontSize: '11px',
-            fontWeight: 600,
+              formatter: (
+                value: string
+              ) => {
+                return `¥${formatNumber(
+                  Number(value)
+                )}`
+              }
+            },
 
-            formatter: () => {
-              return `¥${formatNumber(totalExpense.value)}`
+            total: {
+              show: true,
+              showAlways: true,
+              label: '総支出',
+              color: '#94a3b8',
+              fontSize: '11px',
+              fontWeight: 600,
+
+              formatter: () => {
+                return `¥${formatNumber(
+                  totalExpense.value
+                )}`
+              }
             }
           }
         }
       }
-    }
-  },
+    },
 
-  tooltip: {
-    y: {
-      formatter: (value: number) => {
-        return `¥${formatNumber(value)}`
+    tooltip: {
+      y: {
+        formatter: (
+          value: number
+        ) => {
+          return `¥${formatNumber(
+            value
+          )}`
+        }
       }
     }
-  }
-}))
+  }))
 </script>
 
 <style scoped>
+.category-chart-wrapper {
+  width: 100%;
+}
+
 .category-chart {
   display: grid;
-  grid-template-columns: minmax(240px, 1fr) minmax(220px, 0.9fr);
+  grid-template-columns:
+    minmax(240px, 1fr)
+    minmax(220px, 0.9fr);
   align-items: center;
   gap: 10px;
   padding: 4px 18px 20px;
@@ -208,7 +346,9 @@ const chartOptions = computed(() => ({
   border: 1px solid #edf0f5;
   border-radius: 12px;
   background: #fafbfc;
-  transition: 0.2s ease;
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
 }
 
 .category-item:hover {
@@ -257,6 +397,15 @@ const chartOptions = computed(() => ({
   color: #111827;
   font-size: 11px;
   font-weight: 800;
+}
+
+.no-data {
+  min-height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9aa3b1;
+  font-size: 11px;
 }
 
 @media (max-width: 900px) {

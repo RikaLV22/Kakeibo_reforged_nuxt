@@ -4,7 +4,15 @@
       v-for="(section, index) in sections"
       :key="section.title"
     >
-      <div class="summary-section">
+      <div
+        class="summary-section"
+        :class="{
+          'low-balance':
+            isLowBalance(section.summary.balance),
+          'negative-balance':
+            isNegativeBalance(section.summary.balance)
+        }"
+      >
         <div class="summary-title">
           <span
             class="summary-icon"
@@ -25,18 +33,46 @@
 
         <div class="summary-stats">
           <div class="summary-stat">
-            <span class="stat-label">総収入</span>
+            <span class="stat-label">
+              総収入
+            </span>
+
             <span class="stat-value income">
               +¥{{ formatNumber(section.summary.income) }}
             </span>
           </div>
 
           <div class="summary-stat">
-            <span class="stat-label">総支出</span>
+            <span class="stat-label">
+              総支出
+            </span>
+
             <span class="stat-value expense">
               -¥{{ formatNumber(section.summary.expense) }}
             </span>
           </div>
+        </div>
+
+        <div
+          v-if="
+            isNegativeBalance(
+              section.summary.balance
+            )
+          "
+          class="balance-message negative-message"
+        >
+          {{ getNegativeBalanceMessage(section) }}
+        </div>
+
+        <div
+          v-else-if="
+            isLowBalance(
+              section.summary.balance
+            )
+          "
+          class="balance-message"
+        >
+          {{ getLowBalanceMessage(section) }}
         </div>
       </div>
 
@@ -67,8 +103,65 @@ defineProps<{
   sections: SummarySection[]
 }>()
 
-const formatNumber = (value: number) => {
-  return new Intl.NumberFormat('ja-JP').format(value || 0)
+const formatNumber = (
+  value: number
+) => {
+  return new Intl.NumberFormat(
+    'ja-JP'
+  ).format(
+    value || 0
+  )
+}
+
+const isPersonalSection = (
+  section: SummarySection
+) => {
+  return (
+    section.title === '自分' ||
+    section.title.includes('個人')
+  )
+}
+
+const isLowBalance = (
+  balance: number
+) => {
+  const value =
+    Number(balance || 0)
+
+  return (
+    value >= 0 &&
+    value <= 10000
+  )
+}
+
+const isNegativeBalance = (
+  balance: number
+) => {
+  return Number(balance || 0) < 0
+}
+
+const getLowBalanceMessage = (
+  section: SummarySection
+) => {
+  if (
+    isPersonalSection(section)
+  ) {
+    return '支出を抑えてください'
+  }
+
+  return '残高が1万円以下です'
+}
+
+const getNegativeBalanceMessage = (
+  section: SummarySection
+) => {
+  if (
+    isPersonalSection(section)
+  ) {
+    return '組織に対する収入より支出の方が多いです'
+  }
+
+  return '残高がマイナスです'
 }
 </script>
 
@@ -86,6 +179,12 @@ const formatNumber = (value: number) => {
 
 .summary-section {
   min-width: 0;
+  padding: 12px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .summary-title {
@@ -176,6 +275,53 @@ const formatNumber = (value: number) => {
 .summary-divider {
   width: 1px;
   background: #edf0f5;
+}
+
+.low-balance {
+  border-color: #fecaca;
+  background: #fff5f5;
+}
+
+.low-balance .summary-main-value {
+  color: #b91c1c;
+}
+
+.low-balance .summary-icon {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.low-balance .summary-stat {
+  background: #fffafa;
+}
+
+.negative-balance {
+  border-color: #ddd6fe;
+  background: #faf5ff;
+}
+
+.negative-balance .summary-main-value {
+  color: #7e22ce;
+}
+
+.negative-balance .summary-icon {
+  background: #ede9fe;
+  color: #7e22ce;
+}
+
+.negative-balance .summary-stat {
+  background: #fdfaff;
+}
+
+.balance-message {
+  margin-top: 10px;
+  color: #dc2626;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.negative-message {
+  color: #7e22ce;
 }
 
 @media (max-width: 700px) {

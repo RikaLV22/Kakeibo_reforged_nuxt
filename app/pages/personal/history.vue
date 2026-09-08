@@ -52,7 +52,6 @@
           v-if="hasHistoryData"
           class="history-content"
         >
-          <!-- サマリー -->
           <section class="summary-grid">
             <div class="summary-card">
               <span class="summary-label">
@@ -119,7 +118,6 @@
             </div>
           </section>
 
-          <!-- 月別収支 -->
           <section class="dashboard-card large-card">
             <div class="card-header">
               <div>
@@ -136,21 +134,40 @@
             />
           </section>
 
-          <!-- 支出カテゴリ / 月別支出 -->
           <div class="two-column">
             <section class="dashboard-card">
-              <div class="card-header">
+              <div class="card-header category-card-header">
                 <div>
                   <h2>支出カテゴリ</h2>
 
                   <p>
-                    {{ selectedYear }}年のカテゴリ別支出
+                    {{ categoryPeriodLabel }}のカテゴリ別支出
                   </p>
+                </div>
+
+                <div class="category-period-select">
+                  <span class="category-period-label">
+                    対象期間
+                  </span>
+
+                  <select v-model="selectedCategoryPeriod">
+                    <option value="all">
+                      全期間
+                    </option>
+
+                    <option
+                      v-for="month in 12"
+                      :key="month"
+                      :value="String(month)"
+                    >
+                      {{ month }}月
+                    </option>
+                  </select>
                 </div>
               </div>
 
               <ExpenseCategoryChart
-                :data="personal.category_expense"
+                :data="selectedCategoryExpense"
               />
             </section>
 
@@ -192,7 +209,6 @@
             </section>
           </div>
 
-          <!-- 取引一覧 -->
           <section class="dashboard-card large-card">
             <div class="card-header">
               <div>
@@ -260,7 +276,8 @@
                         :class="transaction.transaction_type"
                       >
                         {{
-                          transaction.transaction_type === 'income'
+                          transaction.transaction_type ===
+                          'income'
                             ? '収入'
                             : '支出'
                         }}
@@ -276,7 +293,8 @@
                       :class="transaction.transaction_type"
                     >
                       {{
-                        transaction.transaction_type === 'income'
+                        transaction.transaction_type ===
+                        'income'
                           ? '+'
                           : '-'
                       }}¥{{ formatNumber(transaction.amount) }}
@@ -324,7 +342,6 @@
       </template>
     </div>
 
-    <!-- 取引詳細モーダル -->
     <Teleport to="body">
       <div
         v-if="selectedTransaction"
@@ -373,7 +390,8 @@
                   :class="selectedTransaction.transaction_type"
                 >
                   {{
-                    selectedTransaction.transaction_type === 'income'
+                    selectedTransaction.transaction_type ===
+                    'income'
                       ? '収入'
                       : '支出'
                   }}
@@ -401,7 +419,8 @@
                 :class="selectedTransaction.transaction_type"
               >
                 {{
-                  selectedTransaction.transaction_type === 'income'
+                  selectedTransaction.transaction_type ===
+                  'income'
                     ? '+'
                     : '-'
                 }}¥{{ formatNumber(selectedTransaction.amount) }}
@@ -524,173 +543,356 @@ interface HistoryResponse {
   transactions: Transaction[]
 }
 
-const currentYear = new Date().getFullYear()
+type CategoryPeriod =
+  | 'all'
+  | '1'
+  | '2'
+  | '3'
+  | '4'
+  | '5'
+  | '6'
+  | '7'
+  | '8'
+  | '9'
+  | '10'
+  | '11'
+  | '12'
 
-const selectedYear = ref(currentYear)
+const currentYear =
+  new Date().getFullYear()
 
-const selectedMonth = ref(
-  new Date().getMonth() + 1
-)
+const selectedYear =
+  ref(currentYear)
 
-const isLoading = ref(false)
+const selectedMonth =
+  ref(
+    new Date().getMonth() + 1
+  )
+
+const selectedCategoryPeriod =
+  ref<CategoryPeriod>('all')
+
+const isLoading =
+  ref(false)
 
 const selectedTransaction =
-  ref<Transaction | null>(null)
+  ref<Transaction | null>(
+    null
+  )
 
-const personal = ref<SummarySection>({
-  total: {
-    income: 0,
-    expense: 0,
-    balance: 0
-  },
-
-  monthly: [],
-
-  category_expense: []
-})
+const personal =
+  ref<SummarySection>({
+    total: {
+      income: 0,
+      expense: 0,
+      balance: 0
+    },
+    monthly: [],
+    category_expense: []
+  })
 
 const transactions =
   ref<Transaction[]>([])
 
-const availableYears = computed(() => {
-  const years: number[] = []
+const availableYears =
+  computed(() => {
+    const years: number[] = []
 
-  for (
-    let year = currentYear;
-    year >= currentYear - 10;
-    year--
-  ) {
-    years.push(year)
-  }
-
-  return years
-})
-
-const hasHistoryData = computed(() => {
-  return (
-    transactions.value.length > 0 ||
-    personal.value.total.income > 0 ||
-    personal.value.total.expense > 0
-  )
-})
-
-const monthlyTransactions = computed(() => {
-  return transactions.value.filter(
-    transaction => {
-      const date = new Date(
-        `${transaction.date}T00:00:00`
-      )
-
-      return (
-        date.getMonth() + 1 ===
-        selectedMonth.value
-      )
+    for (
+      let year = currentYear;
+      year >= currentYear - 10;
+      year--
+    ) {
+      years.push(year)
     }
-  )
-})
 
-const formatNumber = (
-  value: number
-) => {
-  return new Intl.NumberFormat(
-    'ja-JP'
-  ).format(value || 0)
-}
+    return years
+  })
 
-const formatDate = (
-  date: string
-) => {
-  const value = new Date(
-    `${date}T00:00:00`
-  )
+const hasHistoryData =
+  computed(() => {
+    return (
+      transactions.value.length > 0 ||
+      personal.value.total.income > 0 ||
+      personal.value.total.expense > 0
+    )
+  })
 
-  return `${value.getFullYear()}/${String(
-    value.getMonth() + 1
-  ).padStart(2, '0')}/${String(
-    value.getDate()
-  ).padStart(2, '0')}`
-}
+const monthlyTransactions =
+  computed(() => {
+    return transactions.value.filter(
+      transaction => {
+        const date =
+          new Date(
+            `${transaction.date}T00:00:00`
+          )
 
-const monthlyExpensePercentage = (
-  expense: number
-) => {
-  const maxExpense = Math.max(
-    ...personal.value.monthly.map(
-      item => Number(item.expense)
-    ),
-    1
-  )
+        return (
+          date.getFullYear() ===
+            selectedYear.value &&
+          date.getMonth() + 1 ===
+            selectedMonth.value
+        )
+      }
+    )
+  })
 
-  return Math.round(
-    (Number(expense) / maxExpense) * 100
-  )
-}
+const categoryPeriodLabel =
+  computed(() => {
+    if (
+      selectedCategoryPeriod.value ===
+      'all'
+    ) {
+      return `${selectedYear.value}年`
+    }
 
-const openTransactionModal = (
-  transaction: Transaction
-) => {
-  selectedTransaction.value =
-    transaction
-}
+    return `${selectedYear.value}年${selectedCategoryPeriod.value}月`
+  })
 
-const closeTransactionModal = () => {
-  selectedTransaction.value = null
-}
+const buildCategoryExpense =
+  (
+    transactionList: Transaction[]
+  ): CategoryExpense[] => {
+    const categoryMap =
+      new Map<string, number>()
 
-const fetchHistory = async () => {
-  isLoading.value = true
-
-  try {
-    const response =
-      await $api.get(
-        '/personal_transactions/history_summary',
-        {
-          params: {
-            year: selectedYear.value
-          }
+    transactionList.forEach(
+      transaction => {
+        if (
+          transaction.transaction_type !==
+          'expense'
+        ) {
+          return
         }
-      )
 
-    const data =
-      response.data as unknown as HistoryResponse
+        const category =
+          transaction.category?.trim() ||
+          'その他'
 
-    personal.value =
-      data.personal
+        const amount =
+          Number(
+            transaction.amount || 0
+          )
 
-    transactions.value =
-      data.transactions || []
-  } catch (error) {
-    console.error(
-      '過去データの取得に失敗しました:',
-      error
+        categoryMap.set(
+          category,
+          (categoryMap.get(category) || 0) +
+            amount
+        )
+      }
     )
 
-    personal.value = {
-      total: {
-        income: 0,
-        expense: 0,
-        balance: 0
-      },
+    return Array.from(
+      categoryMap.entries()
+    )
+      .map(
+        ([category, amount]) => ({
+          category,
+          amount
+        })
+      )
+      .sort(
+        (a, b) =>
+          b.amount - a.amount
+      )
+  }
 
-      monthly: [],
-
-      category_expense: []
+const selectedCategoryExpense =
+  computed<CategoryExpense[]>(() => {
+    if (
+      selectedCategoryPeriod.value ===
+      'all'
+    ) {
+      return buildCategoryExpense(
+        transactions.value
+      )
     }
 
-    transactions.value = []
-  } finally {
-    isLoading.value = false
-  }
-}
+    const targetMonth =
+      Number(
+        selectedCategoryPeriod.value
+      )
 
-onMounted(async () => {
-  await fetchHistory()
-})
+    return buildCategoryExpense(
+      transactions.value.filter(
+        transaction => {
+          if (
+            transaction.transaction_type !==
+            'expense'
+          ) {
+            return false
+          }
+
+          const date =
+            new Date(
+              `${transaction.date}T00:00:00`
+            )
+
+          return (
+            date.getFullYear() ===
+              selectedYear.value &&
+            date.getMonth() + 1 ===
+              targetMonth
+          )
+        }
+      )
+    )
+  })
+
+const monthlyExpensePercentage =
+  (
+    expense: number
+  ) => {
+    const maxExpense =
+      Math.max(
+        ...personal.value.monthly.map(
+          item =>
+            Number(
+              item.expense
+            )
+        ),
+        1
+      )
+
+    return Math.round(
+      (Number(expense) /
+        maxExpense) *
+        100
+    )
+  }
+
+const formatNumber =
+  (value: number) => {
+    return new Intl.NumberFormat(
+      'ja-JP'
+    ).format(
+      value || 0
+    )
+  }
+
+const formatDate =
+  (date: string) => {
+    const value =
+      new Date(
+        `${date}T00:00:00`
+      )
+
+    return `${value.getFullYear()}/${String(
+      value.getMonth() + 1
+    ).padStart(
+      2,
+      '0'
+    )}/${String(
+      value.getDate()
+    ).padStart(
+      2,
+      '0'
+    )}`
+  }
+
+const getSelectedOrganizationId =
+  () => {
+    if (
+      !import.meta.client
+    ) {
+      return null
+    }
+
+    const value =
+      localStorage.getItem(
+        'selectedOrganizationId'
+      )
+
+    if (!value) {
+      return null
+    }
+
+    const id =
+      Number(value)
+
+    return Number.isFinite(id)
+      ? id
+      : null
+  }
+
+const openTransactionModal =
+  (
+    transaction: Transaction
+  ) => {
+    selectedTransaction.value =
+      transaction
+  }
+
+const closeTransactionModal =
+  () => {
+    selectedTransaction.value =
+      null
+  }
+
+const fetchHistory =
+  async () => {
+    isLoading.value =
+      true
+
+    try {
+      const response =
+        await $api.get(
+          '/personal_transactions/history_summary',
+          {
+            params: {
+              year:
+                selectedYear.value
+            }
+          }
+        )
+
+      const data =
+        response.data as
+          unknown as
+          HistoryResponse
+
+      personal.value =
+        data.personal
+
+      transactions.value =
+        data.transactions || []
+    } catch (error) {
+      console.error(
+        '過去データの取得に失敗しました:',
+        error
+      )
+
+      personal.value = {
+        total: {
+          income: 0,
+          expense: 0,
+          balance: 0
+        },
+        monthly: [],
+        category_expense: []
+      }
+
+      transactions.value = []
+    } finally {
+      isLoading.value =
+        false
+    }
+  }
+
+onMounted(
+  async () => {
+    await fetchHistory()
+  }
+)
 
 watch(
   selectedYear,
   async () => {
-    selectedMonth.value = 1
+    selectedMonth.value =
+      1
+
+    selectedCategoryPeriod.value =
+      'all'
 
     closeTransactionModal()
 
@@ -786,10 +988,11 @@ body {
 
 .summary-grid {
   display: grid;
-  grid-template-columns: repeat(
-    4,
-    minmax(0, 1fr)
-  );
+  grid-template-columns:
+    repeat(
+      4,
+      minmax(0, 1fr)
+    );
   gap: 14px;
   margin-bottom: 16px;
 }
@@ -801,7 +1004,8 @@ body {
   border-radius: 16px;
   background: #fff;
   box-shadow:
-    0 6px 24px rgba(
+    0 6px 24px
+    rgba(
       20,
       30,
       55,
@@ -848,7 +1052,8 @@ body {
   border-radius: 18px;
   background: #fff;
   box-shadow:
-    0 6px 24px rgba(
+    0 6px 24px
+    rgba(
       20,
       30,
       55,
@@ -884,12 +1089,52 @@ body {
   line-height: 1.5;
 }
 
+.category-card-header {
+  align-items: center;
+}
+
+.category-period-select {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 5px;
+  border-radius: 10px;
+  background: #f1f3f6;
+}
+
+.category-period-label {
+  padding-left: 6px;
+  color: #8a94a6;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.category-period-select select {
+  min-width: 95px;
+  height: 30px;
+  padding: 0 9px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  outline: none;
+  background: #fff;
+  color: #374151;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.category-period-select select:focus {
+  border-color: #94a3b8;
+}
+
 .two-column {
   display: grid;
-  grid-template-columns: repeat(
-    2,
-    minmax(0, 1fr)
-  );
+  grid-template-columns:
+    repeat(
+      2,
+      minmax(0, 1fr)
+    );
   gap: 24px;
   align-items: stretch;
   margin-bottom: 24px;
@@ -1114,7 +1359,8 @@ body {
   border-radius: 20px;
   background: #fff;
   box-shadow:
-    0 20px 60px rgba(
+    0 20px 60px
+    rgba(
       15,
       23,
       42,
@@ -1269,7 +1515,8 @@ body {
   border-radius: 18px;
   background: #fff;
   box-shadow:
-    0 6px 24px rgba(
+    0 6px 24px
+    rgba(
       20,
       30,
       55,
@@ -1316,7 +1563,10 @@ body {
   border: 3px solid #e5e7eb;
   border-top-color: #64748b;
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  animation:
+    spin 0.8s
+    linear
+    infinite;
 }
 
 @keyframes spin {
@@ -1359,6 +1609,19 @@ body {
 
   .summary-grid {
     grid-template-columns: 1fr;
+  }
+
+  .category-card-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .category-period-select {
+    width: 100%;
+  }
+
+  .category-period-select select {
+    flex: 1;
   }
 
   .expense-row {

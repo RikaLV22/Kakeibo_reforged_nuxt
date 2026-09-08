@@ -71,10 +71,40 @@
                 <h2>組織の収支推移</h2>
                 <p>月ごとの組織全体の収入・支出・収支</p>
               </div>
+
+              <button
+                type="button"
+                class="chart-toggle"
+                @click="
+                  organizationChartMode =
+                    organizationChartMode === 'line'
+                      ? 'bar'
+                      : 'line'
+                "
+              >
+                <span
+                  :class="{
+                    active:
+                      organizationChartMode === 'bar'
+                  }"
+                >
+                  棒
+                </span>
+
+                <span
+                  :class="{
+                    active:
+                      organizationChartMode === 'line'
+                  }"
+                >
+                  線
+                </span>
+              </button>
             </div>
 
             <OrganizationBalanceChart
               :data="organization.monthly"
+              :chart-mode="organizationChartMode"
             />
           </div>
 
@@ -84,10 +114,40 @@
                 <h2>自分の収支推移</h2>
                 <p>組織家計簿における自分の収入・支出</p>
               </div>
+
+              <button
+                type="button"
+                class="chart-toggle"
+                @click="
+                  personalChartMode =
+                    personalChartMode === 'bar-line'
+                      ? 'line'
+                      : 'bar-line'
+                "
+              >
+                <span
+                  :class="{
+                    active:
+                      personalChartMode === 'bar-line'
+                  }"
+                >
+                  比較
+                </span>
+
+                <span
+                  :class="{
+                    active:
+                      personalChartMode === 'line'
+                  }"
+                >
+                  推移
+                </span>
+              </button>
             </div>
 
-            <OrganizationBalanceChart
+            <PersonalBalanceChart
               :data="organizationMember.monthly"
+              :chart-mode="personalChartMode"
             />
           </div>
 
@@ -96,6 +156,73 @@
               <div>
                 <h2>支出カテゴリ</h2>
                 <p>組織のカテゴリ別支出</p>
+              </div>
+
+              <div class="category-period-toggle">
+                <button
+                  type="button"
+                  :class="{
+                    active:
+                      categoryPeriod === 'today'
+                  }"
+                  @click="
+                    changeCategoryPeriod('today')
+                  "
+                >
+                  今日
+                </button>
+
+                <button
+                  type="button"
+                  :class="{
+                    active:
+                      categoryPeriod === 'week'
+                  }"
+                  @click="
+                    changeCategoryPeriod('week')
+                  "
+                >
+                  今週
+                </button>
+
+                <button
+                  type="button"
+                  :class="{
+                    active:
+                      categoryPeriod === 'month'
+                  }"
+                  @click="
+                    changeCategoryPeriod('month')
+                  "
+                >
+                  今月
+                </button>
+
+                <button
+                  type="button"
+                  :class="{
+                    active:
+                      categoryPeriod === 'year'
+                  }"
+                  @click="
+                    changeCategoryPeriod('year')
+                  "
+                >
+                  今年
+                </button>
+
+                <button
+                  type="button"
+                  :class="{
+                    active:
+                      categoryPeriod === 'all'
+                  }"
+                  @click="
+                    changeCategoryPeriod('all')
+                  "
+                >
+                  全期間
+                </button>
               </div>
             </div>
 
@@ -126,7 +253,9 @@
 
               <button
                 class="transfer-button"
-                :disabled="accounts.length < 2"
+                :disabled="
+                  accounts.length < 2
+                "
                 @click="openTransferModal"
               >
                 ↔ 口座間で移動
@@ -168,6 +297,7 @@ import {
 import TransactionCalendar from '~/components/TransactionCalendar.client.vue'
 import ExpenseCategoryChart from '~/components/ExpenseCategoryChart.client.vue'
 import OrganizationBalanceChart from '~/components/OrganizationBalanceChart.client.vue'
+import PersonalBalanceChart from '~/components/PersonalBalanceChart.client.vue'
 import UserBalanceChart from '~/components/UserBalanceChart.client.vue'
 import AccountList from '~/components/AccountList.vue'
 import AccountDetailModal from '~/components/AccountDetailModal.vue'
@@ -241,6 +371,13 @@ interface TransferForm {
   amount: number | null
 }
 
+type CategoryPeriod =
+  | 'all'
+  | 'year'
+  | 'month'
+  | 'week'
+  | 'today'
+
 const emptyPeriodSummary =
   (): PeriodSummary => ({
     income: 0,
@@ -252,11 +389,15 @@ const emptySummarySection =
   (): SummarySection => ({
     total:
       emptyPeriodSummary(),
+
     current_month:
       emptyPeriodSummary(),
+
     current_year:
       emptyPeriodSummary(),
+
     monthly: [],
+
     category_expense: []
   })
 
@@ -278,6 +419,21 @@ const accounts =
 
 const selectedAccount =
   ref<Account | null>(null)
+
+const organizationChartMode =
+  ref<'bar' | 'line'>(
+    'line'
+  )
+
+const personalChartMode =
+  ref<'bar-line' | 'line'>(
+    'bar-line'
+  )
+
+const categoryPeriod =
+  ref<CategoryPeriod>(
+    'all'
+  )
 
 const showTransferModal =
   ref(false)
@@ -330,15 +486,6 @@ const closeAccountModal =
       null
   }
 
-const formatNumber =
-  (value: number) => {
-    return new Intl.NumberFormat(
-      'ja-JP'
-    ).format(
-      value || 0
-    )
-  }
-
 const normalizeSummary =
   (
     data: SummaryResponse
@@ -371,7 +518,9 @@ const normalizeSummary =
   }
 
 const fetchSummary =
-  async () => {
+  async (
+    period: CategoryPeriod = 'all'
+  ) => {
     try {
       const response =
         await $api.get<SummaryResponse>(
@@ -382,7 +531,9 @@ const fetchSummary =
                 new Date().getFullYear(),
 
               organization_id:
-                getSelectedOrganizationId()
+                getSelectedOrganizationId(),
+
+              period
             }
           }
         )
@@ -419,6 +570,18 @@ const fetchSummary =
         error
       )
     }
+  }
+
+const changeCategoryPeriod =
+  async (
+    period: CategoryPeriod
+  ) => {
+    categoryPeriod.value =
+      period
+
+    await fetchSummary(
+      period
+    )
   }
 
 const fetchAccounts =
@@ -495,7 +658,8 @@ const transferMoney =
 
     const amount =
       Number(
-        transferForm.value.amount
+        transferForm.value
+          .amount
       )
 
     if (
@@ -603,7 +767,7 @@ const transferMoney =
 onMounted(
   async () => {
     await Promise.all([
-      fetchSummary(),
+      fetchSummary('all'),
       fetchAccounts()
     ])
   }
@@ -747,6 +911,95 @@ onMounted(
   min-height: 270px;
 }
 
+.chart-toggle {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid #e2e6ed;
+  border-radius: 10px;
+  background: #f1f3f6;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.chart-toggle span {
+  min-width: 38px;
+  padding: 6px 9px;
+  border-radius: 8px;
+  color: #9aa3b1;
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.chart-toggle span.active {
+  background: #fff;
+  color: #111827;
+  box-shadow:
+    0 2px 7px
+    rgba(
+      15,
+      23,
+      42,
+      0.08
+    );
+}
+
+.chart-toggle:hover span:not(.active) {
+  color: #475569;
+}
+
+.category-period-toggle {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid #e2e6ed;
+  border-radius: 10px;
+  background: #f1f3f6;
+}
+
+.category-period-toggle button {
+  min-width: 42px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #9aa3b1;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.category-period-toggle button:hover {
+  color: #475569;
+}
+
+.category-period-toggle button.active {
+  background: #fff;
+  color: #111827;
+  box-shadow:
+    0 2px 7px
+    rgba(
+      15,
+      23,
+      42,
+      0.08
+    );
+}
+
 .transfer-button {
   flex-shrink: 0;
   padding: 8px 12px;
@@ -857,11 +1110,34 @@ onMounted(
     padding: 15px 16px 12px;
   }
 
+  .chart-toggle {
+    align-self: flex-start;
+  }
+
+  .chart-toggle span {
+    min-width: 34px;
+    padding: 6px 8px;
+  }
+
+  .category-period-toggle {
+    align-self: flex-start;
+  }
+
+  .category-period-toggle button {
+    min-width: 38px;
+    padding: 6px 6px;
+    font-size: 9px;
+  }
+
   .transfer-button {
     width: 100%;
   }
 
   .card-header:has(.transfer-button) {
+    flex-direction: column;
+  }
+
+  .card-header:has(.category-period-toggle) {
     flex-direction: column;
   }
 }

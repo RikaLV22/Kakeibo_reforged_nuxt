@@ -164,18 +164,40 @@
 
           <div class="two-column">
             <section class="dashboard-card">
-              <div class="card-header">
+              <div class="card-header category-card-header">
                 <div>
                   <h2>支出カテゴリ</h2>
 
                   <p>
-                    {{ selectedYear }}年のカテゴリ別支出
+                    {{ categoryPeriodLabel }}のカテゴリ別支出
                   </p>
+                </div>
+
+                <div class="category-period-select">
+                  <span class="category-period-label">
+                    対象期間
+                  </span>
+
+                  <select
+                    v-model="selectedCategoryPeriod"
+                  >
+                    <option value="year">
+                      年間
+                    </option>
+
+                    <option
+                      v-for="month in 12"
+                      :key="month"
+                      :value="String(month)"
+                    >
+                      {{ month }}月
+                    </option>
+                  </select>
                 </div>
               </div>
 
               <ExpenseCategoryChart
-                :data="organization.category_expense"
+                :data="selectedCategoryExpense"
               />
             </section>
 
@@ -613,6 +635,21 @@ interface HistoryResponse {
   transactions: Transaction[]
 }
 
+type CategoryPeriod =
+  | 'year'
+  | '1'
+  | '2'
+  | '3'
+  | '4'
+  | '5'
+  | '6'
+  | '7'
+  | '8'
+  | '9'
+  | '10'
+  | '11'
+  | '12'
+
 const currentYear =
   new Date().getFullYear()
 
@@ -622,6 +659,11 @@ const selectedYear =
 const selectedMonth =
   ref(
     new Date().getMonth() + 1
+  )
+
+const selectedCategoryPeriod =
+  ref<CategoryPeriod>(
+    'year'
   )
 
 const isLoading =
@@ -659,9 +701,7 @@ const organizationMember =
   })
 
 const users =
-  ref<UserMonthlySummary[]>(
-    []
-  )
+  ref<UserMonthlySummary[]>([])
 
 const transactions =
   ref<Transaction[]>([])
@@ -700,11 +740,111 @@ const monthlyTransactions =
           )
 
         return (
+          date.getFullYear() ===
+            selectedYear.value &&
           date.getMonth() + 1 ===
-          selectedMonth.value
+            selectedMonth.value
         )
       }
     )
+  })
+
+const selectedCategoryExpense =
+  computed<CategoryExpense[]>(() => {
+    if (
+      selectedCategoryPeriod.value ===
+      'year'
+    ) {
+      return (
+        organization.value.category_expense ||
+        []
+      )
+    }
+
+    const month =
+      Number(
+        selectedCategoryPeriod.value
+      )
+
+    const categoryMap =
+      new Map<
+        string,
+        number
+      >()
+
+    transactions.value.forEach(
+      transaction => {
+        if (
+          transaction.transaction_type !==
+          'expense'
+        ) {
+          return
+        }
+
+        const date =
+          new Date(
+            `${transaction.date}T00:00:00`
+          )
+
+        const transactionYear =
+          date.getFullYear()
+
+        const transactionMonth =
+          date.getMonth() + 1
+
+        if (
+          transactionYear !==
+            selectedYear.value ||
+          transactionMonth !==
+            month
+        ) {
+          return
+        }
+
+        const category =
+          transaction.category?.trim() ||
+          'その他'
+
+        const amount =
+          Number(
+            transaction.amount || 0
+          )
+
+        categoryMap.set(
+          category,
+          (categoryMap.get(
+            category
+          ) || 0) + amount
+        )
+      }
+    )
+
+    return Array.from(
+      categoryMap.entries()
+    )
+      .map(
+        ([category, amount]) => ({
+          category,
+          amount
+        })
+      )
+      .sort(
+        (a, b) =>
+          b.amount -
+          a.amount
+      )
+  })
+
+const categoryPeriodLabel =
+  computed(() => {
+    if (
+      selectedCategoryPeriod.value ===
+      'year'
+    ) {
+      return `${selectedYear.value}年`
+    }
+
+    return `${selectedYear.value}年${selectedCategoryPeriod.value}月`
   })
 
 const formatNumber =
@@ -748,7 +888,7 @@ const monthlyExpensePercentage =
     return Math.round(
       (Number(expense) /
         maxExpense) *
-      100
+        100
     )
   }
 
@@ -811,7 +951,8 @@ const fetchHistory =
 
       const data =
         response.data as
-        unknown as HistoryResponse
+          unknown as
+          HistoryResponse
 
       organization.value =
         data.organization
@@ -874,6 +1015,9 @@ watch(
   async () => {
     selectedMonth.value =
       1
+
+    selectedCategoryPeriod.value =
+      'year'
 
     closeTransactionModal()
 
@@ -1070,6 +1214,45 @@ body {
   line-height: 1.5;
 }
 
+.category-card-header {
+  align-items: center;
+}
+
+.category-period-select {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+  padding: 4px;
+  border-radius: 10px;
+  background: #f1f3f6;
+}
+
+.category-period-label {
+  padding-left: 6px;
+  color: #9aa3b1;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.category-period-select select {
+  min-width: 82px;
+  height: 30px;
+  padding: 0 9px;
+  border: 1px solid #e2e6ed;
+  border-radius: 8px;
+  outline: none;
+  background: #fff;
+  color: #111827;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.category-period-select select:focus {
+  border-color: #cbd5e1;
+}
+
 .two-column {
   display: grid;
   grid-template-columns:
@@ -1086,10 +1269,6 @@ body {
   height: 100%;
   box-sizing: border-box;
   margin-bottom: 0;
-}
-
-.user-chart {
-  width: 100%;
 }
 
 .expense-list {
@@ -1514,7 +1693,10 @@ body {
   border: 3px solid #e5e7eb;
   border-top-color: #64748b;
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  animation:
+    spin 0.8s
+    linear
+    infinite;
 }
 
 @keyframes spin {
@@ -1557,6 +1739,19 @@ body {
 
   .summary-grid {
     grid-template-columns: 1fr;
+  }
+
+  .category-card-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .category-period-select {
+    width: 100%;
+  }
+
+  .category-period-select select {
+    flex: 1;
   }
 
   .expense-row {

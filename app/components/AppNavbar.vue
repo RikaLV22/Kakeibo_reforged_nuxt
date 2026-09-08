@@ -5,13 +5,6 @@
     </div>
 
     <div class="navbar-menu">
-      <NuxtLink
-        to="/"
-        class="nav-item"
-      >
-        ホーム
-      </NuxtLink>
-
       <div class="organization-nav">
         <button
           type="button"

@@ -44,7 +44,7 @@
             </NuxtLink>
           </div>
 
-         <SummaryPanel
+          <SummaryPanel
             :sections="[
               {
                 title: '今月の家計',
@@ -71,18 +71,117 @@
                 <h2>自分の収支推移</h2>
                 <p>月ごとの収入・支出・収支</p>
               </div>
+
+              <button
+                type="button"
+                class="chart-toggle"
+                @click="
+                  personalChartMode =
+                    personalChartMode === 'bar-line'
+                      ? 'line'
+                      : 'bar-line'
+                "
+              >
+                <span
+                  :class="{
+                    active:
+                      personalChartMode === 'bar-line'
+                  }"
+                >
+                  比較
+                </span>
+
+                <span
+                  :class="{
+                    active:
+                      personalChartMode === 'line'
+                  }"
+                >
+                  推移
+                </span>
+              </button>
             </div>
 
-            <OrganizationBalanceChart
+            <PersonalBalanceChart
               :data="monthlySummary"
+              :chart-mode="personalChartMode"
             />
           </div>
 
           <div class="dashboard-card graph-card">
-            <div class="card-header">
+            <div class="card-header category-card-header">
               <div>
                 <h2>自分の支出カテゴリ</h2>
-                <p>カテゴリ別の支出</p>
+                <p>
+                  {{ categoryPeriodLabel }}のカテゴリ別支出
+                </p>
+              </div>
+
+              <div class="category-period-toggle">
+                <button
+                  type="button"
+                  :class="{
+                    active:
+                      categoryPeriod === 'today'
+                  }"
+                  @click="
+                    changeCategoryPeriod('today')
+                  "
+                >
+                  今日
+                </button>
+
+                <button
+                  type="button"
+                  :class="{
+                    active:
+                      categoryPeriod === 'week'
+                  }"
+                  @click="
+                    changeCategoryPeriod('week')
+                  "
+                >
+                  今週
+                </button>
+
+                <button
+                  type="button"
+                  :class="{
+                    active:
+                      categoryPeriod === 'month'
+                  }"
+                  @click="
+                    changeCategoryPeriod('month')
+                  "
+                >
+                  今月
+                </button>
+
+                <button
+                  type="button"
+                  :class="{
+                    active:
+                      categoryPeriod === 'year'
+                  }"
+                  @click="
+                    changeCategoryPeriod('year')
+                  "
+                >
+                  今年
+                </button>
+
+                <button
+                  type="button"
+                  :class="{
+                    active:
+                      categoryPeriod === 'all'
+                  }"
+                  @click="
+                    changeCategoryPeriod('all')
+                  "
+                >
+                  全期間
+                </button>
               </div>
             </div>
 
@@ -100,7 +199,9 @@
 
               <button
                 class="transfer-button"
-                :disabled="accounts.length < 2"
+                :disabled="
+                  accounts.length < 2
+                "
                 @click="openTransferModal"
               >
                 ↔ 口座間で移動
@@ -116,7 +217,6 @@
       </section>
     </div>
 
-    <!-- 口座間移動モーダル -->
     <AccountTransferModal
       :is-open="showTransferModal"
       :accounts="accounts"
@@ -127,7 +227,6 @@
       @submit="transferMoney"
     />
 
-    <!-- 口座詳細モーダル -->
     <AccountDetailModal
       :account="selectedAccount"
       @close="closeAccountModal"
@@ -137,15 +236,16 @@
 
 <script setup lang="ts">
 import {
-  nextTick,
   onMounted,
   ref
 } from 'vue'
 
 import TransactionCalendar from '~/components/TransactionCalendar.client.vue'
 import ExpenseCategoryChart from '~/components/ExpenseCategoryChart.client.vue'
-import OrganizationBalanceChart from '~/components/OrganizationBalanceChart.client.vue'
+import PersonalBalanceChart from '~/components/PersonalBalanceChart.client.vue'
 import AccountTransferModal from '~/components/AccountTransferModal.vue'
+import AccountList from '~/components/AccountList.vue'
+import AccountDetailModal from '~/components/AccountDetailModal.vue'
 import type { Account } from '~/types/account'
 import ChatAssistant from '~/components/ChatAssistant.vue'
 import SummaryPanel from '~/components/SummaryPanel.vue'
@@ -192,19 +292,29 @@ interface TransferForm {
   amount: number | null
 }
 
-const emptyPeriodSummary = (): PeriodSummary => ({
-  income: 0,
-  expense: 0,
-  balance: 0
-})
+type CategoryPeriod =
+  | 'all'
+  | 'year'
+  | 'month'
+  | 'week'
+  | 'today'
 
-const currentMonth = ref<PeriodSummary>(
-  emptyPeriodSummary()
-)
+const emptyPeriodSummary =
+  (): PeriodSummary => ({
+    income: 0,
+    expense: 0,
+    balance: 0
+  })
 
-const currentYear = ref<PeriodSummary>(
-  emptyPeriodSummary()
-)
+const currentMonth =
+  ref<PeriodSummary>(
+    emptyPeriodSummary()
+  )
+
+const currentYear =
+  ref<PeriodSummary>(
+    emptyPeriodSummary()
+  )
 
 const monthlySummary =
   ref<MonthlySummary[]>([])
@@ -212,32 +322,23 @@ const monthlySummary =
 const categoryExpense =
   ref<CategoryExpense[]>([])
 
+const categoryPeriod =
+  ref<CategoryPeriod>(
+    'all'
+  )
+
+const personalChartMode =
+  ref<'bar-line' | 'line'>(
+    'bar-line'
+  )
+
 const accounts =
   ref<Account[]>([])
 
-/*
- * 選択中の口座
- */
 const selectedAccount =
-  ref<Account | null>(null)
-
-/*
- * 口座詳細モーダルを開く
- */
-const openAccountModal = (
-  account: Account
-) => {
-  selectedAccount.value =
-    account
-}
-
-/*
- * 口座詳細モーダルを閉じる
- */
-const closeAccountModal = () => {
-  selectedAccount.value =
+  ref<Account | null>(
     null
-}
+  )
 
 const showTransferModal =
   ref(false)
@@ -255,29 +356,38 @@ const transferForm =
     amount: null
   })
 
-const formatNumber = (
-  value:
-    | number
-    | string
-    | null
-    | undefined
-) => {
-  return new Intl.NumberFormat(
-    'ja-JP'
-  ).format(
-    Number(value || 0)
-  )
-}
+const categoryPeriodLabel =
+  ref('全期間')
+
+const formatNumber =
+  (
+    value:
+      | number
+      | string
+      | null
+      | undefined
+  ) => {
+    return new Intl.NumberFormat(
+      'ja-JP'
+    ).format(
+      Number(value || 0)
+    )
+  }
 
 const fetchSummary =
-  async () => {
+  async (
+    period: CategoryPeriod = 'all'
+  ) => {
     try {
       const response =
         await $api.get<SummaryResponse>(
-          '/personal_transactions/summary'
+          '/personal_transactions/summary',
+          {
+            params: {
+              period
+            }
+          }
         )
-
-      console.log(response.data)
 
       const data =
         response.data?.personal ||
@@ -333,6 +443,43 @@ const fetchSummary =
     }
   }
 
+const changeCategoryPeriod =
+  async (
+    period: CategoryPeriod
+  ) => {
+    categoryPeriod.value =
+      period
+
+    if (
+      period === 'all'
+    ) {
+      categoryPeriodLabel.value =
+        '全期間'
+    } else if (
+      period === 'year'
+    ) {
+      categoryPeriodLabel.value =
+        '今年'
+    } else if (
+      period === 'month'
+    ) {
+      categoryPeriodLabel.value =
+        '今月'
+    } else if (
+      period === 'week'
+    ) {
+      categoryPeriodLabel.value =
+        '今週'
+    } else {
+      categoryPeriodLabel.value =
+        '今日'
+    }
+
+    await fetchSummary(
+      period
+    )
+  }
+
 const fetchAccounts =
   async () => {
     try {
@@ -354,6 +501,20 @@ const fetchAccounts =
     }
   }
 
+const openAccountModal =
+  (
+    account: Account
+  ) => {
+    selectedAccount.value =
+      account
+  }
+
+const closeAccountModal =
+  () => {
+    selectedAccount.value =
+      null
+  }
+
 const openTransferModal =
   () => {
     transferError.value =
@@ -371,7 +532,9 @@ const openTransferModal =
 
 const closeTransferModal =
   () => {
-    if (isTransferring.value) {
+    if (
+      isTransferring.value
+    ) {
       return
     }
 
@@ -401,7 +564,8 @@ const transferMoney =
 
     const amount =
       Number(
-        transferForm.value.amount
+        transferForm.value
+          .amount
       )
 
     if (
@@ -425,7 +589,9 @@ const transferMoney =
     }
 
     if (
-      !Number.isFinite(amount) ||
+      !Number.isFinite(
+        amount
+      ) ||
       amount <= 0
     ) {
       transferError.value =
@@ -483,7 +649,9 @@ const transferMoney =
       alert(
         '口座間の資金移動が完了しました'
       )
-    } catch (error: any) {
+    } catch (
+      error: any
+    ) {
       console.error(
         '口座間の資金移動に失敗しました:',
         error
@@ -501,10 +669,9 @@ const transferMoney =
 onMounted(
   async () => {
     await Promise.all([
-      fetchSummary(),
+      fetchSummary('all'),
       fetchAccounts()
     ])
-
   }
 )
 </script>
@@ -646,6 +813,99 @@ onMounted(
   min-height: 270px;
 }
 
+.chart-toggle {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid #e2e6ed;
+  border-radius: 10px;
+  background: #f1f3f6;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.chart-toggle span {
+  min-width: 38px;
+  padding: 6px 9px;
+  border-radius: 8px;
+  color: #9aa3b1;
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.chart-toggle span.active {
+  background: #fff;
+  color: #111827;
+  box-shadow:
+    0 2px 7px
+    rgba(
+      15,
+      23,
+      42,
+      0.08
+    );
+}
+
+.chart-toggle:hover span:not(.active) {
+  color: #475569;
+}
+
+.category-card-header {
+  align-items: center;
+}
+
+.category-period-toggle {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid #e2e6ed;
+  border-radius: 10px;
+  background: #f1f3f6;
+}
+
+.category-period-toggle button {
+  min-width: 42px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #9aa3b1;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.category-period-toggle button:hover {
+  color: #475569;
+}
+
+.category-period-toggle button.active {
+  background: #fff;
+  color: #111827;
+  box-shadow:
+    0 2px 7px
+    rgba(
+      15,
+      23,
+      42,
+      0.08
+    );
+}
+
 .transfer-button {
   flex-shrink: 0;
   padding: 8px 12px;
@@ -659,7 +919,9 @@ onMounted(
   transition: 0.2s ease;
 }
 
-.transfer-button:hover:not(:disabled) {
+.transfer-button:hover:not(
+    :disabled
+  ) {
   background: #f8fafc;
   border-color: #cbd5e1;
   color: #111827;
@@ -752,6 +1014,32 @@ onMounted(
 
   .card-header {
     padding: 15px 16px 12px;
+  }
+
+  .chart-toggle {
+    align-self: flex-start;
+  }
+
+  .chart-toggle span {
+    min-width: 34px;
+    padding: 6px 8px;
+  }
+
+  .category-card-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .category-period-toggle {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .category-period-toggle button {
+    flex: 1;
+    min-width: 0;
+    padding: 6px 5px;
+    font-size: 9px;
   }
 
   .transfer-button {
