@@ -1,7 +1,14 @@
 <template>
   <div class="category-chart-wrapper">
+    <div v-if="chartsMaintenance" class="charts-maintenance-card">
+      <div class="maintenance-icon">!</div>
+      <p class="maintenance-eyebrow">CHARTS MAINTENANCE</p>
+      <h2>メンテナンス中です</h2>
+      <p>現在グラフ機能をメンテナンスしています。</p>
+      <span>復旧までしばらくお待ちください。</span>
+    </div>
 
-    <div class="category-chart">
+    <div v-else class="category-chart">
       <div class="chart-area">
         <ClientOnly>
           <ApexChart
@@ -25,8 +32,7 @@
               :style="{
                 background:
                   chartColors[
-                    index %
-                      chartColors.length
+                    index % chartColors.length
                   ]
               }"
             ></span>
@@ -47,10 +53,7 @@
           </span>
         </div>
 
-        <div
-          v-if="data.length === 0"
-          class="no-data"
-        >
+        <div v-if="data.length === 0" class="no-data">
           <span>データがありません</span>
         </div>
       </div>
@@ -59,10 +62,7 @@
 </template>
 
 <script setup lang="ts">
-import {
-  computed
-} from 'vue'
-
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import VueApexCharts from 'vue3-apexcharts'
 
 const ApexChart = VueApexCharts
@@ -79,38 +79,39 @@ type Period =
   | 'week'
   | 'today'
 
+interface MaintenanceUpdate {
+  type: string
+  maintenance?: {
+    features?: {
+      charts?: boolean
+    }
+  }
+}
+
 const props = defineProps<{
   data: CategoryExpense[]
   modelValue?: Period
 }>()
 
 const emit = defineEmits<{
-  (
-    e: 'update:modelValue',
-    value: Period
-  ): void
-  (
-    e: 'period-change',
-    value: Period
-  ): void
+  (e: 'update:modelValue', value: Period): void
+  (e: 'period-change', value: Period): void
 }>()
 
-const period =
-  computed<Period>({
-    get: () => {
-      return (
-        props.modelValue ||
-        'all'
-      )
-    },
+const { $api, $cable } = useNuxtApp()
 
-    set: value => {
-      emit(
-        'update:modelValue',
-        value
-      )
-    }
-  })
+const chartsMaintenance = ref(false)
+
+let maintenanceSubscription: any = null
+
+const period = computed<Period>({
+  get: () => {
+    return props.modelValue || 'all'
+  },
+  set: value => {
+    emit('update:modelValue', value)
+  }
+})
 
 const periodOptions = [
   {
@@ -135,15 +136,9 @@ const periodOptions = [
   }
 ]
 
-const changePeriod = (
-  value: Period
-) => {
+const changePeriod = (value: Period) => {
   period.value = value
-
-  emit(
-    'period-change',
-    value
-  )
+  emit('period-change', value)
 }
 
 const chartColors = [
@@ -159,154 +154,181 @@ const chartColors = [
   '#6366F1'
 ]
 
-const formatNumber = (
-  value: number
-) => {
-  return new Intl.NumberFormat(
-    'ja-JP'
-  ).format(
-    value || 0
-  )
+const formatNumber = (value: number) => {
+  return new Intl.NumberFormat('ja-JP').format(value || 0)
 }
 
-const totalExpense =
-  computed(() => {
-    return props.data.reduce(
-      (sum, item) =>
-        sum +
-        Number(
-          item.amount
-        ),
-      0
-    )
-  })
+const totalExpense = computed(() => {
+  return props.data.reduce(
+    (sum, item) => sum + Number(item.amount),
+    0
+  )
+})
 
-const chartSeries =
-  computed(() => {
-    return props.data.map(
-      item =>
-        Number(
-          item.amount
-        )
-    )
-  })
+const chartSeries = computed(() => {
+  return props.data.map(item => Number(item.amount))
+})
 
-const getPercentage = (
-  amount: number
-) => {
-  if (
-    !totalExpense.value
-  ) {
+const getPercentage = (amount: number) => {
+  if (!totalExpense.value) {
     return 0
   }
 
   return Math.round(
-    (
-      Number(amount) /
-      totalExpense.value
-    ) *
-      100
+    (Number(amount) / totalExpense.value) * 100
   )
 }
 
-const chartOptions =
-  computed(() => ({
-    chart: {
-      type: 'donut' as const,
-      toolbar: {
-        show: false
-      }
-    },
-
-    labels:
-      props.data.map(
-        item =>
-          item.category
-      ),
-
-    colors:
-      chartColors,
-
-    legend: {
+const chartOptions = computed(() => ({
+  chart: {
+    type: 'donut' as const,
+    toolbar: {
       show: false
-    },
-
-    stroke: {
-      width: 3,
-      colors: [
-        '#ffffff'
-      ]
-    },
-
-    dataLabels: {
-      enabled: false
-    },
-
-    plotOptions: {
-      pie: {
-        expandOnClick: false,
-
-        donut: {
-          size: '72%',
-
-          labels: {
+    }
+  },
+  labels: props.data.map(item => item.category),
+  colors: chartColors,
+  legend: {
+    show: false
+  },
+  stroke: {
+    width: 3,
+    colors: ['#ffffff']
+  },
+  dataLabels: {
+    enabled: false
+  },
+  plotOptions: {
+    pie: {
+      expandOnClick: false,
+      donut: {
+        size: '72%',
+        labels: {
+          show: true,
+          name: {
             show: true,
-
-            name: {
-              show: true,
-              offsetY: -4,
-              color: '#94a3b8',
-              fontSize: '11px',
-              fontWeight: 600
-            },
-
-            value: {
-              show: true,
-              offsetY: 8,
-              color: '#111827',
-              fontSize: '20px',
-              fontWeight: 800,
-
-              formatter: (
-                value: string
-              ) => {
-                return `¥${formatNumber(
-                  Number(value)
-                )}`
-              }
-            },
-
-            total: {
-              show: true,
-              showAlways: true,
-              label: '総支出',
-              color: '#94a3b8',
-              fontSize: '11px',
-              fontWeight: 600,
-
-              formatter: () => {
-                return `¥${formatNumber(
-                  totalExpense.value
-                )}`
-              }
+            offsetY: -4,
+            color: '#94a3b8',
+            fontSize: '11px',
+            fontWeight: 600
+          },
+          value: {
+            show: true,
+            offsetY: 8,
+            color: '#111827',
+            fontSize: '20px',
+            fontWeight: 800,
+            formatter: (value: string) => {
+              return `¥${formatNumber(Number(value))}`
+            }
+          },
+          total: {
+            show: true,
+            showAlways: true,
+            label: '総支出',
+            color: '#94a3b8',
+            fontSize: '11px',
+            fontWeight: 600,
+            formatter: () => {
+              return `¥${formatNumber(totalExpense.value)}`
             }
           }
         }
       }
-    },
-
-    tooltip: {
-      y: {
-        formatter: (
-          value: number
-        ) => {
-          return `¥${formatNumber(
-            value
-          )}`
-        }
+    }
+  },
+  tooltip: {
+    y: {
+      formatter: (value: number) => {
+        return `¥${formatNumber(value)}`
       }
     }
-  }))
+  }
+}))
+
+const fetchChartsMaintenance = async () => {
+  try {
+    const response = await $api.get<{
+      charts_enabled: boolean
+    }>('/maintenance/status')
+
+    chartsMaintenance.value = !response.data.charts_enabled
+  } catch (error) {
+    console.error(
+      'グラフメンテナンス状態の取得に失敗しました:',
+      error
+    )
+  }
+}
+
+const applyChartsMaintenance = (enabled: boolean) => {
+  chartsMaintenance.value = !enabled
+}
+
+const connectMaintenanceChannel = () => {
+  if (!$cable) {
+    return
+  }
+
+  maintenanceSubscription =
+    $cable.subscriptions.create(
+      {
+        channel: 'MaintenanceChannel'
+      },
+      {
+        connected() {
+          console.log(
+            '=== CHARTS MAINTENANCE CHANNEL CONNECTED ==='
+          )
+        },
+
+        disconnected() {
+          console.log(
+            '=== CHARTS MAINTENANCE CHANNEL DISCONNECTED ==='
+          )
+        },
+
+        rejected() {
+          console.log(
+            '=== CHARTS MAINTENANCE CHANNEL REJECTED ==='
+          )
+        },
+
+        received(data: MaintenanceUpdate) {
+          if (
+            data?.type !==
+            'maintenance_updated'
+          ) {
+            return
+          }
+
+          const enabled =
+            data.maintenance?.features?.charts
+
+          if (
+            typeof enabled !==
+            'boolean'
+          ) {
+            return
+          }
+
+          applyChartsMaintenance(
+            enabled
+          )
+        }
+      }
+    )
+}
+
+onMounted(async () => {
+  await fetchChartsMaintenance()
+  connectMaintenanceChannel()
+})
+
+onBeforeUnmount(() => {
+  maintenanceSubscription?.unsubscribe?.()
+  maintenanceSubscription = null
+})
 </script>
 
 <style scoped>
@@ -316,9 +338,7 @@ const chartOptions =
 
 .category-chart {
   display: grid;
-  grid-template-columns:
-    minmax(240px, 1fr)
-    minmax(220px, 0.9fr);
+  grid-template-columns: minmax(240px, 1fr) minmax(220px, 0.9fr);
   align-items: center;
   gap: 10px;
   padding: 4px 18px 20px;
@@ -346,9 +366,7 @@ const chartOptions =
   border: 1px solid #edf0f5;
   border-radius: 12px;
   background: #fafbfc;
-  transition:
-    background 0.2s ease,
-    transform 0.2s ease;
+  transition: background 0.2s ease, transform 0.2s ease;
 }
 
 .category-item:hover {
@@ -406,6 +424,75 @@ const chartOptions =
   justify-content: center;
   color: #9aa3b1;
   font-size: 11px;
+}
+
+.charts-maintenance-card {
+  width: 100%;
+  min-height: 340px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 40px 24px;
+  border: 1px solid #1e293b;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #0f172a, #111827);
+  color: #fff;
+  text-align: center;
+}
+
+.maintenance-icon {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(56, 189, 248, 0.5);
+  border-radius: 50%;
+  background: rgba(56, 189, 248, 0.08);
+  color: #38bdf8;
+  font-size: 28px;
+  font-weight: 800;
+  animation: maintenance-pulse 1.8s ease-in-out infinite;
+}
+
+.maintenance-eyebrow {
+  margin: 20px 0 0;
+  color: #38bdf8;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  font-weight: 700;
+}
+
+.charts-maintenance-card h2 {
+  margin: 10px 0 0;
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.charts-maintenance-card p:not(.maintenance-eyebrow) {
+  margin: 10px 0 0;
+  color: #cbd5e1;
+  font-size: 13px;
+}
+
+.charts-maintenance-card span {
+  margin-top: 7px;
+  color: #64748b;
+  font-size: 11px;
+}
+
+@keyframes maintenance-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(1.06);
+    opacity: 0.7;
+  }
 }
 
 @media (max-width: 900px) {

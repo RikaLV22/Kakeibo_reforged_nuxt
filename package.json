@@ -10,16 +10,19 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "@rails/actioncable": "^7.2.302",
     "@schedule-x/calendar": "^4.7.0",
     "@schedule-x/events-service": "^4.7.0",
     "@schedule-x/theme-default": "^4.7.0",
     "@schedule-x/vue": "^4.1.0",
+    "@vueuse/motion": "^3.0.3",
     "apexcharts": "^7.1.0",
     "axios": "^1.20.0",
     "nuxt": "^4.5.2",
-    "temporal-polyfill": "^0.3.0",
+    "temporal-polyfill": "^0.3.2",
     "vue": "^3.5.42",
     "vue-router": "^5.3.0",
+    "vue-web-terminal": "^3.4.2",
     "vue3-apexcharts": "^1.11.1"
   }
 }

@@ -21,10 +21,18 @@
         </div>
 
         <ChatAssistant
+          v-if="aiEnabled"
           api-path="/personal_chat"
           description="自分の家計についてAIに相談できます"
           placeholder="自分の家計について質問してください..."
           initial-message="こんにちは！自分の家計について何でも相談してください。"
+        />
+
+        <MaintenanceCard
+          v-else
+          code="AI ASSISTANT / 01"
+          description="現在、AI家計簿アシスタントをメンテナンスしています。"
+          min-height="350px"
         />
       </section>
 
@@ -75,6 +83,7 @@
               <button
                 type="button"
                 class="chart-toggle"
+                :disabled="!personalBalanceChartEnabled"
                 @click="
                   personalChartMode =
                     personalChartMode === 'bar-line'
@@ -102,9 +111,20 @@
               </button>
             </div>
 
-            <PersonalBalanceChart
-              :data="monthlySummary"
-              :chart-mode="personalChartMode"
+            <div
+              v-if="personalBalanceChartEnabled"
+              class="graph-content"
+            >
+              <PersonalBalanceChart
+                :data="monthlySummary"
+                :chart-mode="personalChartMode"
+              />
+            </div>
+
+            <MaintenanceCard
+              v-else
+              code="PERSONAL BALANCE / 02"
+              description="現在、自分の収支推移グラフをメンテナンスしています。"
             />
           </div>
 
@@ -112,12 +132,13 @@
             <div class="card-header category-card-header">
               <div>
                 <h2>自分の支出カテゴリ</h2>
-                <p>
-                  {{ categoryPeriodLabel }}のカテゴリ別支出
-                </p>
+                <p>{{ categoryPeriodLabel }}のカテゴリ別支出</p>
               </div>
 
-              <div class="category-period-toggle">
+              <div
+                v-if="personalCategoryChartEnabled"
+                class="category-period-toggle"
+              >
                 <button
                   type="button"
                   :class="{
@@ -185,8 +206,19 @@
               </div>
             </div>
 
-            <ExpenseCategoryChart
-              :data="categoryExpense"
+            <div
+              v-if="personalCategoryChartEnabled"
+              class="graph-content"
+            >
+              <ExpenseCategoryChart
+                :data="categoryExpense"
+              />
+            </div>
+
+            <MaintenanceCard
+              v-else
+              code="PERSONAL CATEGORY / 03"
+              description="現在、自分の支出カテゴリグラフをメンテナンスしています。"
             />
           </div>
 
@@ -198,10 +230,9 @@
               </div>
 
               <button
+                v-if="accountsEnabled"
                 class="transfer-button"
-                :disabled="
-                  accounts.length < 2
-                "
+                :disabled="accounts.length < 2"
                 @click="openTransferModal"
               >
                 ↔ 口座間で移動
@@ -209,8 +240,16 @@
             </div>
 
             <AccountList
+              v-if="accountsEnabled"
               :accounts="accounts"
               @select="openAccountModal"
+            />
+
+            <MaintenanceCard
+              v-else
+              code="ACCOUNT MANAGEMENT / 04"
+              description="現在、口座管理機能をメンテナンスしています。"
+              min-height="270px"
             />
           </div>
         </div>
@@ -218,6 +257,7 @@
     </div>
 
     <AccountTransferModal
+      v-if="accountsEnabled"
       :is-open="showTransferModal"
       :accounts="accounts"
       :is-transferring="isTransferring"
@@ -228,6 +268,7 @@
     />
 
     <AccountDetailModal
+      v-if="accountsEnabled"
       :account="selectedAccount"
       @close="closeAccountModal"
     />
@@ -236,21 +277,21 @@
 
 <script setup lang="ts">
 import {
+  onBeforeUnmount,
   onMounted,
   ref
 } from 'vue'
-
 import TransactionCalendar from '~/components/TransactionCalendar.client.vue'
 import ExpenseCategoryChart from '~/components/ExpenseCategoryChart.client.vue'
 import PersonalBalanceChart from '~/components/PersonalBalanceChart.client.vue'
 import AccountTransferModal from '~/components/AccountTransferModal.vue'
 import AccountList from '~/components/AccountList.vue'
 import AccountDetailModal from '~/components/AccountDetailModal.vue'
-import type { Account } from '~/types/account'
 import ChatAssistant from '~/components/ChatAssistant.vue'
 import SummaryPanel from '~/components/SummaryPanel.vue'
+import type { Account } from '~/types/account'
 
-const { $api } = useNuxtApp()
+const { $api, $cable } = useNuxtApp()
 
 interface PeriodSummary {
   income: number
@@ -299,6 +340,27 @@ type CategoryPeriod =
   | 'week'
   | 'today'
 
+interface MaintenanceResponse {
+  personal_balance_chart_enabled: boolean
+  personal_category_chart_enabled: boolean
+  accounts_enabled: boolean
+  ai_enabled: boolean
+}
+
+interface MaintenanceFeatures {
+  personal_balance_chart?: boolean
+  personal_category_chart?: boolean
+  accounts?: boolean
+  ai?: boolean
+}
+
+interface MaintenanceUpdate {
+  type: string
+  maintenance?: {
+    features?: MaintenanceFeatures
+  }
+}
+
 const emptyPeriodSummary =
   (): PeriodSummary => ({
     income: 0,
@@ -323,9 +385,10 @@ const categoryExpense =
   ref<CategoryExpense[]>([])
 
 const categoryPeriod =
-  ref<CategoryPeriod>(
-    'all'
-  )
+  ref<CategoryPeriod>('all')
+
+const categoryPeriodLabel =
+  ref('全期間')
 
 const personalChartMode =
   ref<'bar-line' | 'line'>(
@@ -336,9 +399,7 @@ const accounts =
   ref<Account[]>([])
 
 const selectedAccount =
-  ref<Account | null>(
-    null
-  )
+  ref<Account | null>(null)
 
 const showTransferModal =
   ref(false)
@@ -356,27 +417,161 @@ const transferForm =
     amount: null
   })
 
-const categoryPeriodLabel =
-  ref('全期間')
+const personalBalanceChartEnabled =
+  ref(true)
 
-const formatNumber =
+const personalCategoryChartEnabled =
+  ref(true)
+
+const accountsEnabled =
+  ref(true)
+
+const aiEnabled =
+  ref(true)
+
+let maintenanceSubscription:
+  any = null
+
+const applyMaintenance =
   (
-    value:
-      | number
-      | string
-      | null
-      | undefined
+    data: MaintenanceResponse
   ) => {
-    return new Intl.NumberFormat(
-      'ja-JP'
-    ).format(
-      Number(value || 0)
-    )
+    personalBalanceChartEnabled.value =
+      data.personal_balance_chart_enabled
+
+    personalCategoryChartEnabled.value =
+      data.personal_category_chart_enabled
+
+    accountsEnabled.value =
+      data.accounts_enabled
+
+    aiEnabled.value =
+      data.ai_enabled
+
+    if (!data.accounts_enabled) {
+      showTransferModal.value = false
+      selectedAccount.value = null
+    }
+  }
+
+const applyMaintenanceUpdate =
+  (
+    features?: MaintenanceFeatures
+  ) => {
+    if (!features) {
+      return
+    }
+
+    if (
+      typeof features.personal_balance_chart ===
+      'boolean'
+    ) {
+      personalBalanceChartEnabled.value =
+        features.personal_balance_chart
+    }
+
+    if (
+      typeof features.personal_category_chart ===
+      'boolean'
+    ) {
+      personalCategoryChartEnabled.value =
+        features.personal_category_chart
+    }
+
+    if (
+      typeof features.accounts ===
+      'boolean'
+    ) {
+      accountsEnabled.value =
+        features.accounts
+
+      if (!features.accounts) {
+        showTransferModal.value = false
+        selectedAccount.value = null
+      }
+    }
+
+    if (
+      typeof features.ai ===
+      'boolean'
+    ) {
+      aiEnabled.value =
+        features.ai
+    }
+  }
+
+const connectMaintenanceChannel =
+  () => {
+    if (!$cable) {
+      return
+    }
+
+    maintenanceSubscription =
+      $cable.subscriptions.create(
+        {
+          channel:
+            'MaintenanceChannel'
+        },
+        {
+          connected() {
+            console.log(
+              '=== PERSONAL MAINTENANCE CHANNEL CONNECTED ==='
+            )
+          },
+
+          disconnected() {
+            console.log(
+              '=== PERSONAL MAINTENANCE CHANNEL DISCONNECTED ==='
+            )
+          },
+
+          rejected() {
+            console.log(
+              '=== PERSONAL MAINTENANCE CHANNEL REJECTED ==='
+            )
+          },
+
+          received(
+            data: MaintenanceUpdate
+          ) {
+            if (
+              data?.type !==
+              'maintenance_updated'
+            ) {
+              return
+            }
+
+            applyMaintenanceUpdate(
+              data.maintenance?.features
+            )
+          }
+        }
+      )
+  }
+
+const fetchMaintenance =
+  async () => {
+    try {
+      const response =
+        await $api.get<MaintenanceResponse>(
+          '/maintenance/status'
+        )
+
+      applyMaintenance(
+        response.data
+      )
+    } catch (error) {
+      console.error(
+        '個人メンテナンス状態の取得に失敗しました:',
+        error
+      )
+    }
   }
 
 const fetchSummary =
   async (
-    period: CategoryPeriod = 'all'
+    period:
+      CategoryPeriod = 'all'
   ) => {
     try {
       const response =
@@ -419,10 +614,12 @@ const fetchSummary =
         emptyPeriodSummary()
 
       monthlySummary.value =
-        data.monthly || []
+        data.monthly ||
+        []
 
       categoryExpense.value =
-        data.category_expense || []
+        data.category_expense ||
+        []
     } catch (error) {
       console.error(
         '個人家計データの取得に失敗しました:',
@@ -445,7 +642,8 @@ const fetchSummary =
 
 const changeCategoryPeriod =
   async (
-    period: CategoryPeriod
+    period:
+      CategoryPeriod
   ) => {
     categoryPeriod.value =
       period
@@ -482,6 +680,11 @@ const changeCategoryPeriod =
 
 const fetchAccounts =
   async () => {
+    if (!accountsEnabled.value) {
+      accounts.value = []
+      return
+    }
+
     try {
       const response =
         await $api.get<Account[]>(
@@ -489,7 +692,8 @@ const fetchAccounts =
         )
 
       accounts.value =
-        response.data || []
+        response.data ||
+        []
     } catch (error) {
       console.error(
         '個人口座データの取得に失敗しました:',
@@ -505,6 +709,10 @@ const openAccountModal =
   (
     account: Account
   ) => {
+    if (!accountsEnabled.value) {
+      return
+    }
+
     selectedAccount.value =
       account
   }
@@ -517,14 +725,19 @@ const closeAccountModal =
 
 const openTransferModal =
   () => {
+    if (!accountsEnabled.value) {
+      return
+    }
+
     transferError.value =
       ''
 
-    transferForm.value = {
-      fromAccountId: '',
-      toAccountId: '',
-      amount: null
-    }
+    transferForm.value =
+      {
+        fromAccountId: '',
+        toAccountId: '',
+        amount: null
+      }
 
     showTransferModal.value =
       true
@@ -547,6 +760,10 @@ const closeTransferModal =
 
 const transferMoney =
   async () => {
+    if (!accountsEnabled.value) {
+      return
+    }
+
     transferError.value =
       ''
 
@@ -634,16 +851,13 @@ const transferMoney =
         {
           from_account_id:
             fromAccountId,
-
           to_account_id:
             toAccountId,
-
           amount
         }
       )
 
       await fetchAccounts()
-
       closeTransferModal()
 
       alert(
@@ -658,7 +872,8 @@ const transferMoney =
       )
 
       transferError.value =
-        error?.response?.data?.error ||
+        error?.response
+          ?.data?.error ||
         '資金移動に失敗しました'
     } finally {
       isTransferring.value =
@@ -669,9 +884,23 @@ const transferMoney =
 onMounted(
   async () => {
     await Promise.all([
-      fetchSummary('all'),
-      fetchAccounts()
+      fetchMaintenance(),
+      fetchSummary('all')
     ])
+
+    await fetchAccounts()
+
+    connectMaintenanceChannel()
+  }
+)
+
+onBeforeUnmount(
+  () => {
+    maintenanceSubscription
+      ?.unsubscribe?.()
+
+    maintenanceSubscription =
+      null
   }
 )
 </script>
@@ -717,12 +946,7 @@ onMounted(
   border-radius: 18px;
   box-shadow:
     0 6px 24px
-    rgba(
-      20,
-      30,
-      55,
-      0.05
-    );
+    rgba(20, 30, 55, 0.05);
   overflow: hidden;
 }
 
@@ -813,6 +1037,10 @@ onMounted(
   min-height: 270px;
 }
 
+.graph-content {
+  width: 100%;
+}
+
 .chart-toggle {
   flex-shrink: 0;
   display: flex;
@@ -824,6 +1052,11 @@ onMounted(
   background: #f1f3f6;
   cursor: pointer;
   font-family: inherit;
+}
+
+.chart-toggle:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
 .chart-toggle span {
@@ -845,15 +1078,11 @@ onMounted(
   color: #111827;
   box-shadow:
     0 2px 7px
-    rgba(
-      15,
-      23,
-      42,
-      0.08
-    );
+    rgba(15, 23, 42, 0.08);
 }
 
-.chart-toggle:hover span:not(.active) {
+.chart-toggle:hover:not(:disabled)
+  span:not(.active) {
   color: #475569;
 }
 
@@ -898,12 +1127,7 @@ onMounted(
   color: #111827;
   box-shadow:
     0 2px 7px
-    rgba(
-      15,
-      23,
-      42,
-      0.08
-    );
+    rgba(15, 23, 42, 0.08);
 }
 
 .transfer-button {
@@ -919,9 +1143,7 @@ onMounted(
   transition: 0.2s ease;
 }
 
-.transfer-button:hover:not(
-    :disabled
-  ) {
+.transfer-button:hover:not(:disabled) {
   background: #f8fafc;
   border-color: #cbd5e1;
   color: #111827;

@@ -1,6 +1,8 @@
 <template>
   <div id="app">
-    <NuxtPage />
+    <NuxtLayout>
+      <NuxtPage />
+    </NuxtLayout>
   </div>
 </template>
 
@@ -13,13 +15,12 @@ body,
   min-height: 100%;
 }
 
-/* スクロールバーだけ非表示 */
 html {
-  scrollbar-width: none; /* Firefox */
+  scrollbar-width: none;
 }
 
 html::-webkit-scrollbar {
-  display: none; /* Chrome / Edge / Safari */
+  display: none;
 }
 
 body {

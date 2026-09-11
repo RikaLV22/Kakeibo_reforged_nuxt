@@ -2,7 +2,17 @@
   <div class="transactions-page">
     <AppNavbar />
 
-    <div class="dashboard-grid">
+    <MaintenanceCard
+      v-if="!organizationEnabled"
+      code="ORGANIZATION SYSTEM"
+      description="現在、組織家計簿機能をメンテナンスしています。"
+      min-height="calc(100vh - 110px)"
+    />
+
+    <div
+      v-else
+      class="dashboard-grid"
+    >
       <section class="left-column">
         <div class="dashboard-card calendar-card">
           <div class="card-header">
@@ -21,10 +31,18 @@
         </div>
 
         <ChatAssistant
+          v-if="aiEnabled"
           api-path="/chat"
           description="家計についてAIに相談できます"
           placeholder="家計について質問してください..."
           initial-message="こんにちは！組織の家計について何でも相談してください。"
+        />
+
+        <MaintenanceCard
+          v-else
+          code="AI ASSISTANT / 01"
+          description="現在、AI家計簿アシスタントをメンテナンスしています。"
+          min-height="350px"
         />
       </section>
 
@@ -75,6 +93,7 @@
               <button
                 type="button"
                 class="chart-toggle"
+                :disabled="!organizationBalanceChartEnabled"
                 @click="
                   organizationChartMode =
                     organizationChartMode === 'line'
@@ -102,9 +121,21 @@
               </button>
             </div>
 
-            <OrganizationBalanceChart
-              :data="organization.monthly"
-              :chart-mode="organizationChartMode"
+            <div
+              v-if="organizationBalanceChartEnabled"
+              class="graph-content"
+            >
+              <OrganizationBalanceChart
+                :data="organization.monthly"
+                :chart-mode="organizationChartMode"
+              />
+            </div>
+
+            <MaintenanceCard
+              v-else
+              title="組織の収支推移"
+              code="ORGANIZATION BALANCE / 02"
+              description="現在、組織の収支推移グラフをメンテナンスしています。"
             />
           </div>
 
@@ -118,6 +149,9 @@
               <button
                 type="button"
                 class="chart-toggle"
+                :disabled="
+                  !organizationPersonalBalanceChartEnabled
+                "
                 @click="
                   personalChartMode =
                     personalChartMode === 'bar-line'
@@ -128,7 +162,8 @@
                 <span
                   :class="{
                     active:
-                      personalChartMode === 'bar-line'
+                      personalChartMode ===
+                      'bar-line'
                   }"
                 >
                   比較
@@ -137,7 +172,8 @@
                 <span
                   :class="{
                     active:
-                      personalChartMode === 'line'
+                      personalChartMode ===
+                      'line'
                   }"
                 >
                   推移
@@ -145,9 +181,23 @@
               </button>
             </div>
 
-            <PersonalBalanceChart
-              :data="organizationMember.monthly"
-              :chart-mode="personalChartMode"
+            <div
+              v-if="
+                organizationPersonalBalanceChartEnabled
+              "
+              class="graph-content"
+            >
+              <PersonalBalanceChart
+                :data="organizationMember.monthly"
+                :chart-mode="personalChartMode"
+              />
+            </div>
+
+            <MaintenanceCard
+              v-else
+              title="自分の収支推移"
+              code="MEMBER BALANCE / 03"
+              description="現在、自分の収支推移グラフをメンテナンスしています。"
             />
           </div>
 
@@ -158,7 +208,10 @@
                 <p>組織のカテゴリ別支出</p>
               </div>
 
-              <div class="category-period-toggle">
+              <div
+                v-if="organizationCategoryChartEnabled"
+                class="category-period-toggle"
+              >
                 <button
                   type="button"
                   :class="{
@@ -226,8 +279,20 @@
               </div>
             </div>
 
-            <ExpenseCategoryChart
-              :data="organization.category_expense"
+            <div
+              v-if="organizationCategoryChartEnabled"
+              class="graph-content"
+            >
+              <ExpenseCategoryChart
+                :data="organization.category_expense"
+              />
+            </div>
+
+            <MaintenanceCard
+              v-else
+              title="支出カテゴリ"
+              code="CATEGORY ANALYSIS / 04"
+              description="現在、支出カテゴリグラフをメンテナンスしています。"
             />
           </div>
 
@@ -239,12 +304,28 @@
               </div>
             </div>
 
-            <UserBalanceChart
-              :users="users"
+            <div
+              v-if="
+                organizationUserBalanceChartEnabled
+              "
+              class="graph-content"
+            >
+              <UserBalanceChart
+                :users="users"
+              />
+            </div>
+
+            <MaintenanceCard
+              v-else
+              title="ユーザごとの収支推移"
+              code="USER BALANCE / 05"
+              description="現在、ユーザごとの収支推移グラフをメンテナンスしています。"
             />
           </div>
 
-          <div class="dashboard-card graph-card account-card">
+          <div
+            class="dashboard-card graph-card account-card"
+          >
             <div class="card-header">
               <div>
                 <h2>口座状況</h2>
@@ -252,10 +333,9 @@
               </div>
 
               <button
+                v-if="accountsEnabled"
                 class="transfer-button"
-                :disabled="
-                  accounts.length < 2
-                "
+                :disabled="accounts.length < 2"
                 @click="openTransferModal"
               >
                 ↔ 口座間で移動
@@ -263,8 +343,16 @@
             </div>
 
             <AccountList
+              v-if="accountsEnabled"
               :accounts="accounts"
               @select="openAccountModal"
+            />
+
+            <MaintenanceCard
+              v-else
+              code="ACCOUNT MANAGEMENT / 06"
+              description="現在、口座管理機能をメンテナンスしています。"
+              min-height="270px"
             />
           </div>
         </div>
@@ -272,6 +360,10 @@
     </div>
 
     <AccountTransferModal
+      v-if="
+        organizationEnabled &&
+        accountsEnabled
+      "
       :is-open="showTransferModal"
       :accounts="accounts"
       :is-transferring="isTransferring"
@@ -282,6 +374,10 @@
     />
 
     <AccountDetailModal
+      v-if="
+        organizationEnabled &&
+        accountsEnabled
+      "
       :account="selectedAccount"
       @close="closeAccountModal"
     />
@@ -290,10 +386,10 @@
 
 <script setup lang="ts">
 import {
+  onBeforeUnmount,
   onMounted,
   ref
 } from 'vue'
-
 import TransactionCalendar from '~/components/TransactionCalendar.client.vue'
 import ExpenseCategoryChart from '~/components/ExpenseCategoryChart.client.vue'
 import OrganizationBalanceChart from '~/components/OrganizationBalanceChart.client.vue'
@@ -303,10 +399,10 @@ import AccountList from '~/components/AccountList.vue'
 import AccountDetailModal from '~/components/AccountDetailModal.vue'
 import AccountTransferModal from '~/components/AccountTransferModal.vue'
 import ChatAssistant from '~/components/ChatAssistant.vue'
-import type { Account } from '~/types/account'
 import SummaryPanel from '~/components/SummaryPanel.vue'
+import type { Account } from '~/types/account'
 
-const { $api } = useNuxtApp()
+const { $api, $cable } = useNuxtApp()
 
 interface PeriodSummary {
   income: number
@@ -371,6 +467,38 @@ interface TransferForm {
   amount: number | null
 }
 
+interface MaintenanceResponse {
+  calendar_enabled: boolean
+  charts_enabled: boolean
+  accounts_enabled: boolean
+  organization_enabled: boolean
+  ai_enabled: boolean
+  personal_balance_chart_enabled: boolean
+  personal_category_chart_enabled: boolean
+  organization_balance_chart_enabled: boolean
+  organization_personal_balance_chart_enabled: boolean
+  organization_category_chart_enabled: boolean
+  organization_user_balance_chart_enabled: boolean
+}
+
+interface MaintenanceFeatures {
+  calendar?: boolean
+  organization?: boolean
+  accounts?: boolean
+  ai?: boolean
+  organization_balance_chart?: boolean
+  organization_personal_balance_chart?: boolean
+  organization_category_chart?: boolean
+  organization_user_balance_chart?: boolean
+}
+
+interface MaintenanceUpdate {
+  type: string
+  maintenance?: {
+    features?: MaintenanceFeatures
+  }
+}
+
 type CategoryPeriod =
   | 'all'
   | 'year'
@@ -389,15 +517,11 @@ const emptySummarySection =
   (): SummarySection => ({
     total:
       emptyPeriodSummary(),
-
     current_month:
       emptyPeriodSummary(),
-
     current_year:
       emptyPeriodSummary(),
-
     monthly: [],
-
     category_expense: []
   })
 
@@ -431,9 +555,7 @@ const personalChartMode =
   )
 
 const categoryPeriod =
-  ref<CategoryPeriod>(
-    'all'
-  )
+  ref<CategoryPeriod>('all')
 
 const showTransferModal =
   ref(false)
@@ -450,6 +572,30 @@ const transferForm =
     toAccountId: '',
     amount: null
   })
+
+const organizationEnabled =
+  ref(true)
+
+const organizationBalanceChartEnabled =
+  ref(true)
+
+const organizationPersonalBalanceChartEnabled =
+  ref(true)
+
+const organizationCategoryChartEnabled =
+  ref(true)
+
+const organizationUserBalanceChartEnabled =
+  ref(true)
+
+const accountsEnabled =
+  ref(true)
+
+const aiEnabled =
+  ref(true)
+
+let maintenanceSubscription:
+  any = null
 
 const getSelectedOrganizationId =
   () => {
@@ -474,16 +620,175 @@ const getSelectedOrganizationId =
       : null
   }
 
-const openAccountModal =
-  (account: Account) => {
-    selectedAccount.value =
-      account
-  }
-
-const closeAccountModal =
+const closeAllInteractiveStates =
   () => {
+    showTransferModal.value =
+      false
+
     selectedAccount.value =
       null
+
+    isTransferring.value =
+      false
+
+    transferError.value =
+      ''
+  }
+
+const applyMaintenance =
+  (
+    data: MaintenanceResponse
+  ) => {
+    organizationEnabled.value =
+      data.organization_enabled
+
+    organizationBalanceChartEnabled.value =
+      data.organization_balance_chart_enabled
+
+    organizationPersonalBalanceChartEnabled.value =
+      data.organization_personal_balance_chart_enabled
+
+    organizationCategoryChartEnabled.value =
+      data.organization_category_chart_enabled
+
+    organizationUserBalanceChartEnabled.value =
+      data.organization_user_balance_chart_enabled
+
+    accountsEnabled.value =
+      data.accounts_enabled
+
+    aiEnabled.value =
+      data.ai_enabled
+
+    if (!data.organization_enabled) {
+      closeAllInteractiveStates()
+    }
+
+    if (!data.accounts_enabled) {
+      closeAllInteractiveStates()
+    }
+  }
+
+const applyMaintenanceUpdate =
+  (
+    features?: MaintenanceFeatures
+  ) => {
+    if (!features) {
+      return
+    }
+
+    if (
+      typeof features.organization ===
+      'boolean'
+    ) {
+      organizationEnabled.value =
+        features.organization
+
+      if (!features.organization) {
+        closeAllInteractiveStates()
+      }
+    }
+
+    if (
+      typeof features.organization_balance_chart ===
+      'boolean'
+    ) {
+      organizationBalanceChartEnabled.value =
+        features.organization_balance_chart
+    }
+
+    if (
+      typeof features.organization_personal_balance_chart ===
+      'boolean'
+    ) {
+      organizationPersonalBalanceChartEnabled.value =
+        features.organization_personal_balance_chart
+    }
+
+    if (
+      typeof features.organization_category_chart ===
+      'boolean'
+    ) {
+      organizationCategoryChartEnabled.value =
+        features.organization_category_chart
+    }
+
+    if (
+      typeof features.organization_user_balance_chart ===
+      'boolean'
+    ) {
+      organizationUserBalanceChartEnabled.value =
+        features.organization_user_balance_chart
+    }
+
+    if (
+      typeof features.accounts ===
+      'boolean'
+    ) {
+      accountsEnabled.value =
+        features.accounts
+
+      if (!features.accounts) {
+        closeAllInteractiveStates()
+      }
+    }
+
+    if (
+      typeof features.ai ===
+      'boolean'
+    ) {
+      aiEnabled.value =
+        features.ai
+    }
+  }
+
+const connectMaintenanceChannel =
+  () => {
+    if (!$cable) {
+      return
+    }
+
+    maintenanceSubscription =
+      $cable.subscriptions.create(
+        {
+          channel:
+            'MaintenanceChannel'
+        },
+        {
+          connected() {
+            console.log(
+              '=== ORGANIZATION MAINTENANCE CHANNEL CONNECTED ==='
+            )
+          },
+
+          disconnected() {
+            console.log(
+              '=== ORGANIZATION MAINTENANCE CHANNEL DISCONNECTED ==='
+            )
+          },
+
+          rejected() {
+            console.log(
+              '=== ORGANIZATION MAINTENANCE CHANNEL REJECTED ==='
+            )
+          },
+
+          received(
+            data: MaintenanceUpdate
+          ) {
+            if (
+              data?.type !==
+              'maintenance_updated'
+            ) {
+              return
+            }
+
+            applyMaintenanceUpdate(
+              data.maintenance?.features
+            )
+          }
+        }
+      )
   }
 
 const normalizeSummary =
@@ -519,8 +824,13 @@ const normalizeSummary =
 
 const fetchSummary =
   async (
-    period: CategoryPeriod = 'all'
+    period:
+      CategoryPeriod = 'all'
   ) => {
+    if (!organizationEnabled.value) {
+      return
+    }
+
     try {
       const response =
         await $api.get<SummaryResponse>(
@@ -529,10 +839,8 @@ const fetchSummary =
             params: {
               year:
                 new Date().getFullYear(),
-
               organization_id:
                 getSelectedOrganizationId(),
-
               period
             }
           }
@@ -574,8 +882,13 @@ const fetchSummary =
 
 const changeCategoryPeriod =
   async (
-    period: CategoryPeriod
+    period:
+      CategoryPeriod
   ) => {
+    if (!organizationEnabled.value) {
+      return
+    }
+
     categoryPeriod.value =
       period
 
@@ -586,6 +899,16 @@ const changeCategoryPeriod =
 
 const fetchAccounts =
   async () => {
+    if (
+      !organizationEnabled.value ||
+      !accountsEnabled.value
+    ) {
+      accounts.value =
+        []
+
+      return
+    }
+
     try {
       const response =
         await $api.get<Account[]>(
@@ -606,11 +929,42 @@ const fetchAccounts =
         '口座情報の取得に失敗しました:',
         error
       )
+
+      accounts.value =
+        []
     }
+  }
+
+const openAccountModal =
+  (
+    account: Account
+  ) => {
+    if (
+      !organizationEnabled.value ||
+      !accountsEnabled.value
+    ) {
+      return
+    }
+
+    selectedAccount.value =
+      account
+  }
+
+const closeAccountModal =
+  () => {
+    selectedAccount.value =
+      null
   }
 
 const openTransferModal =
   () => {
+    if (
+      !organizationEnabled.value ||
+      !accountsEnabled.value
+    ) {
+      return
+    }
+
     transferError.value =
       ''
 
@@ -641,25 +995,29 @@ const closeTransferModal =
 
 const transferMoney =
   async () => {
+    if (
+      !organizationEnabled.value ||
+      !accountsEnabled.value
+    ) {
+      return
+    }
+
     transferError.value =
       ''
 
     const fromAccountId =
       Number(
-        transferForm.value
-          .fromAccountId
+        transferForm.value.fromAccountId
       )
 
     const toAccountId =
       Number(
-        transferForm.value
-          .toAccountId
+        transferForm.value.toAccountId
       )
 
     const amount =
       Number(
-        transferForm.value
-          .amount
+        transferForm.value.amount
       )
 
     if (
@@ -683,7 +1041,9 @@ const transferMoney =
     }
 
     if (
-      !Number.isFinite(amount) ||
+      !Number.isFinite(
+        amount
+      ) ||
       amount <= 0
     ) {
       transferError.value =
@@ -726,10 +1086,8 @@ const transferMoney =
         {
           from_account_id:
             fromAccountId,
-
           to_account_id:
             toAccountId,
-
           amount
         },
         {
@@ -741,7 +1099,6 @@ const transferMoney =
       )
 
       await fetchAccounts()
-
       closeTransferModal()
 
       alert(
@@ -756,7 +1113,8 @@ const transferMoney =
       )
 
       transferError.value =
-        error?.response?.data?.error ||
+        error?.response
+          ?.data?.error ||
         '資金移動に失敗しました'
     } finally {
       isTransferring.value =
@@ -766,10 +1124,45 @@ const transferMoney =
 
 onMounted(
   async () => {
-    await Promise.all([
-      fetchSummary('all'),
-      fetchAccounts()
-    ])
+    try {
+      const response =
+        await $api.get<MaintenanceResponse>(
+          '/maintenance/status'
+        )
+
+      applyMaintenance(
+        response.data
+      )
+
+      if (!organizationEnabled.value) {
+        connectMaintenanceChannel()
+        return
+      }
+
+      await Promise.all([
+        fetchSummary('all'),
+        fetchAccounts()
+      ])
+
+      connectMaintenanceChannel()
+    } catch (error) {
+      console.error(
+        '初期データの取得に失敗しました:',
+        error
+      )
+
+      connectMaintenanceChannel()
+    }
+  }
+)
+
+onBeforeUnmount(
+  () => {
+    maintenanceSubscription
+      ?.unsubscribe?.()
+
+    maintenanceSubscription =
+      null
   }
 )
 </script>
@@ -815,12 +1208,7 @@ onMounted(
   border-radius: 18px;
   box-shadow:
     0 6px 24px
-    rgba(
-      20,
-      30,
-      55,
-      0.05
-    );
+    rgba(20, 30, 55, 0.05);
   overflow: hidden;
 }
 
@@ -911,6 +1299,10 @@ onMounted(
   min-height: 270px;
 }
 
+.graph-content {
+  width: 100%;
+}
+
 .chart-toggle {
   flex-shrink: 0;
   display: flex;
@@ -922,6 +1314,11 @@ onMounted(
   background: #f1f3f6;
   cursor: pointer;
   font-family: inherit;
+}
+
+.chart-toggle:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
 .chart-toggle span {
@@ -943,15 +1340,11 @@ onMounted(
   color: #111827;
   box-shadow:
     0 2px 7px
-    rgba(
-      15,
-      23,
-      42,
-      0.08
-    );
+    rgba(15, 23, 42, 0.08);
 }
 
-.chart-toggle:hover span:not(.active) {
+.chart-toggle:hover:not(:disabled)
+  span:not(.active) {
   color: #475569;
 }
 
@@ -992,12 +1385,7 @@ onMounted(
   color: #111827;
   box-shadow:
     0 2px 7px
-    rgba(
-      15,
-      23,
-      42,
-      0.08
-    );
+    rgba(15, 23, 42, 0.08);
 }
 
 .transfer-button {
@@ -1013,9 +1401,7 @@ onMounted(
   transition: 0.2s ease;
 }
 
-.transfer-button:hover:not(
-    :disabled
-  ) {
+.transfer-button:hover:not(:disabled) {
   background: #f8fafc;
   border-color: #cbd5e1;
   color: #111827;

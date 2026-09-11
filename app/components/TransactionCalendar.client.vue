@@ -1,7 +1,14 @@
 <template>
   <div class="calendar-container">
+    <MaintenanceCard
+      v-if="!calendarEnabled"
+      code="CALENDAR MAINTENANCE"
+      description="現在カレンダー機能をメンテナンスしています。"
+      min-height="750px"
+    />
+
     <ScheduleXCalendar
-      v-if="calendarApp"
+      v-else-if="calendarApp"
       :calendar-app="calendarApp"
     />
 
@@ -13,11 +20,7 @@
       <div class="transaction-modal">
         <div class="modal-header">
           <h2>
-            {{
-              editingId
-                ? '家計簿を編集'
-                : '家計簿をつける'
-            }}
+            {{ editingId ? '家計簿を編集' : '家計簿をつける' }}
           </h2>
 
           <button
@@ -68,7 +71,7 @@
                 editingId !== null &&
                 !isEditMode
               "
-            />
+            >
 
             <select
               v-else-if="
@@ -142,7 +145,7 @@
                 editingId !== null &&
                 !isEditMode
               "
-            />
+            >
           </div>
 
           <div class="form-group">
@@ -155,7 +158,7 @@
                 editingId !== null &&
                 !isEditMode
               "
-            />
+            >
           </div>
 
           <div
@@ -239,7 +242,11 @@
                 :key="account.id"
                 :value="account.id"
               >
-                {{ account.bank?.name || '銀行' }} -
+                {{
+                  account.bank?.name ||
+                  '銀行'
+                }}
+                -
                 {{ account.account_number }}
                 (残高:
                 {{ account.balance }}円)
@@ -269,7 +276,9 @@
             <label>支払方法</label>
 
             <select
-              v-model="newTransaction.payment_method"
+              v-model="
+                newTransaction.payment_method
+              "
               :disabled="
                 editingId !== null &&
                 !isEditMode
@@ -320,7 +329,11 @@
                 :key="account.id"
                 :value="account.id"
               >
-                {{ account.bank?.name || '銀行' }} -
+                {{
+                  account.bank?.name ||
+                  '銀行'
+                }}
+                -
                 {{ account.account_number }}
                 (残高:
                 {{ account.balance }}円)
@@ -441,18 +454,22 @@
             <label>口座番号</label>
 
             <input
-              v-model="newAccount.account_number"
+              v-model="
+                newAccount.account_number
+              "
               type="text"
-            />
+            >
           </div>
 
           <div class="form-group">
             <label>初期残高</label>
 
             <input
-              v-model.number="newAccount.balance"
+              v-model.number="
+                newAccount.balance
+              "
               type="number"
-            />
+            >
           </div>
         </div>
 
@@ -480,41 +497,38 @@
 
 <script setup lang="ts">
 import {
+  onBeforeUnmount,
   onMounted,
   reactive,
+  ref,
   shallowRef,
-  ref
+  watch
 } from 'vue'
-
-import {
-  ScheduleXCalendar
-} from '@schedule-x/vue'
-
+import { ScheduleXCalendar } from '@schedule-x/vue'
 import {
   createCalendar,
-  createViewMonthGrid,
+  createViewDay,
   createViewMonthAgenda,
-  createViewWeek,
-  createViewDay
+  createViewMonthGrid,
+  createViewWeek
 } from '@schedule-x/calendar'
-
-import {
-  createEventsServicePlugin
-} from '@schedule-x/events-service'
-
+import { createEventsServicePlugin } from '@schedule-x/events-service'
 import '@schedule-x/theme-default/dist/index.css'
 import 'temporal-polyfill/global'
 
-const props = withDefaults(
-  defineProps<{
-    apiBasePath?: string
-    accountApiBasePath?: string
-  }>(),
-  {
-    apiBasePath: '/organization_transactions',
-    accountApiBasePath: '/organization_accounts'
-  }
-)
+const props =
+  withDefaults(
+    defineProps<{
+      apiBasePath?: string
+      accountApiBasePath?: string
+    }>(),
+    {
+      apiBasePath:
+        '/organization_transactions',
+      accountApiBasePath:
+        '/organization_accounts'
+    }
+  )
 
 type Transaction = {
   id: number
@@ -554,7 +568,21 @@ type Account = {
   }
 }
 
-const { $api } = useNuxtApp()
+interface MaintenanceResponse {
+  calendar_enabled: boolean
+}
+
+interface MaintenanceUpdate {
+  type: string
+  maintenance?: {
+    features?: {
+      calendar?: boolean
+    }
+  }
+}
+
+const { $api, $cable } =
+  useNuxtApp()
 
 const calendarApp =
   shallowRef<any>(null)
@@ -587,9 +615,15 @@ const selectedAccountId =
   ref<number | ''>('')
 
 const incomeSource =
-  ref<
-    'cash' | 'account'
-  >('cash')
+  ref<'cash' | 'account'>(
+    'cash'
+  )
+
+const calendarEnabled =
+  ref(true)
+
+let maintenanceSubscription:
+  any = null
 
 const newTransaction =
   reactive({
@@ -625,9 +659,113 @@ const getSelectedOrganizationId =
     const id =
       Number(value)
 
-    return Number.isFinite(id)
+    return Number.isFinite(
+      id
+    )
       ? id
       : null
+  }
+
+const fetchCalendarMaintenance =
+  async () => {
+    try {
+      const response =
+        await $api.get<MaintenanceResponse>(
+          '/maintenance/status'
+        )
+
+      calendarEnabled.value =
+        response.data.calendar_enabled
+
+      console.log(
+        'calendar_enabled:',
+        response.data.calendar_enabled
+      )
+    } catch (error) {
+      console.error(
+        'カレンダー状態の取得に失敗しました:',
+        error
+      )
+    }
+  }
+
+const applyCalendarEnabled =
+  (
+    enabled: boolean
+  ) => {
+    calendarEnabled.value =
+      enabled
+
+    if (!enabled) {
+      showModal.value =
+        false
+
+      showAccountModal.value =
+        false
+
+      calendarApp.value =
+        null
+    }
+  }
+
+const connectMaintenanceChannel =
+  () => {
+    if (!$cable) {
+      return
+    }
+
+    maintenanceSubscription =
+      $cable.subscriptions.create(
+        {
+          channel:
+            'MaintenanceChannel'
+        },
+        {
+          connected() {
+            console.log(
+              '=== MAINTENANCE CHANNEL CONNECTED ==='
+            )
+          },
+
+          disconnected() {
+            console.log(
+              '=== MAINTENANCE CHANNEL DISCONNECTED ==='
+            )
+          },
+
+          rejected() {
+            console.log(
+              '=== MAINTENANCE CHANNEL REJECTED ==='
+            )
+          },
+
+          received(
+            data: MaintenanceUpdate
+          ) {
+            if (
+              data?.type !==
+              'maintenance_updated'
+            ) {
+              return
+            }
+
+            const enabled =
+              data.maintenance?.features
+                ?.calendar
+
+            if (
+              typeof enabled !==
+              'boolean'
+            ) {
+              return
+            }
+
+            applyCalendarEnabled(
+              enabled
+            )
+          }
+        }
+      )
   }
 
 const makeCalendarEvents =
@@ -637,16 +775,18 @@ const makeCalendarEvents =
   ) => {
     return transactionList.map(
       transaction => ({
-        id: transaction.id,
+        id:
+          transaction.id,
 
-        title: `${
-          transaction.transaction_type ===
-          'income'
-            ? '+'
-            : '-'
-        }${Number(
-          transaction.amount
-        ).toLocaleString()}円`,
+        title:
+          `${
+            transaction.transaction_type ===
+            'income'
+              ? '+'
+              : '-'
+          }${Number(
+            transaction.amount
+          ).toLocaleString()}円`,
 
         start:
           Temporal.PlainDate.from(
@@ -665,7 +805,9 @@ const fetchTransactions =
   async () => {
     try {
       const response =
-        await $api.get<Transaction[]>(
+        await $api.get<
+          Transaction[]
+        >(
           props.apiBasePath,
           {
             params: {
@@ -676,7 +818,8 @@ const fetchTransactions =
         )
 
       transactions.value =
-        response.data || []
+        response.data ||
+        []
 
       return makeCalendarEvents(
         transactions.value
@@ -687,7 +830,8 @@ const fetchTransactions =
         error
       )
 
-      transactions.value = []
+      transactions.value =
+        []
 
       return []
     }
@@ -702,14 +846,16 @@ const fetchBanks =
         )
 
       banks.value =
-        response.data || []
+        response.data ||
+        []
     } catch (error) {
       console.error(
         '銀行データの取得に失敗しました:',
         error
       )
 
-      banks.value = []
+      banks.value =
+        []
     }
   }
 
@@ -717,7 +863,9 @@ const fetchAccounts =
   async () => {
     try {
       const response =
-        await $api.get<Account[]>(
+        await $api.get<
+          Account[]
+        >(
           props.accountApiBasePath,
           {
             params: {
@@ -728,45 +876,48 @@ const fetchAccounts =
         )
 
       accounts.value =
-        response.data || []
+        response.data ||
+        []
     } catch (error) {
       console.error(
         '口座データの取得に失敗しました:',
         error
       )
 
-      accounts.value = []
+      accounts.value =
+        []
     }
   }
 
-const resetForm = () => {
-  editingId.value =
-    null
+const resetForm =
+  () => {
+    editingId.value =
+      null
 
-  isEditMode.value =
-    true
+    isEditMode.value =
+      true
 
-  newTransaction.transaction_type =
-    ''
+    newTransaction.transaction_type =
+      ''
 
-  newTransaction.category =
-    ''
+    newTransaction.category =
+      ''
 
-  newTransaction.amount =
-    0
+    newTransaction.amount =
+      0
 
-  newTransaction.date =
-    ''
+    newTransaction.date =
+      ''
 
-  newTransaction.payment_method =
-    ''
+    newTransaction.payment_method =
+      ''
 
-  selectedAccountId.value =
-    ''
+    selectedAccountId.value =
+      ''
 
-  incomeSource.value =
-    'cash'
-}
+    incomeSource.value =
+      'cash'
+  }
 
 const setIncomeSource =
   (
@@ -786,8 +937,10 @@ const setIncomeSource =
     }
 
     if (
-      accounts.value.length > 0 &&
-      selectedAccountId.value === ''
+      accounts.value.length >
+        0 &&
+      selectedAccountId.value ===
+        ''
     ) {
       selectedAccountId.value =
         accounts.value[0].id
@@ -796,8 +949,13 @@ const setIncomeSource =
 
 const openModalForDate =
   (
-    date: Temporal.PlainDate
+    date:
+      Temporal.PlainDate
   ) => {
+    if (!calendarEnabled.value) {
+      return
+    }
+
     resetForm()
 
     newTransaction.date =
@@ -808,7 +966,13 @@ const openModalForDate =
   }
 
 const openModalForEvent =
-  (event: any) => {
+  (
+    event: any
+  ) => {
+    if (!calendarEnabled.value) {
+      return
+    }
+
     const transaction =
       transactions.value.find(
         item =>
@@ -830,7 +994,8 @@ const openModalForEvent =
       transaction.transaction_type
 
     newTransaction.category =
-      transaction.category ?? ''
+      transaction.category ??
+      ''
 
     newTransaction.amount =
       Number(
@@ -865,20 +1030,30 @@ const openModalForEvent =
       true
   }
 
-const startEdit = () => {
-  isEditMode.value =
-    true
-}
+const startEdit =
+  () => {
+    if (!calendarEnabled.value) {
+      return
+    }
 
-const closeModal = () => {
-  showModal.value =
-    false
+    isEditMode.value =
+      true
+  }
 
-  resetForm()
-}
+const closeModal =
+  () => {
+    showModal.value =
+      false
+
+    resetForm()
+  }
 
 const openAccountModal =
   () => {
+    if (!calendarEnabled.value) {
+      return
+    }
+
     showAccountModal.value =
       true
   }
@@ -891,6 +1066,10 @@ const closeAccountModal =
 
 const createAccount =
   async () => {
+    if (!calendarEnabled.value) {
+      return
+    }
+
     if (
       !newAccount.bank_id ||
       !newAccount.account_number
@@ -944,7 +1123,9 @@ const createAccount =
 
       closeAccountModal()
     } catch (error) {
-      console.error(error)
+      console.error(
+        error
+      )
 
       alert(
         '口座登録に失敗しました'
@@ -977,9 +1158,7 @@ const validateTransaction =
       return false
     }
 
-    if (
-      !newTransaction.date
-    ) {
+    if (!newTransaction.date) {
       alert(
         '日付を入力してください'
       )
@@ -1053,31 +1232,31 @@ const validateTransaction =
 
 const saveTransaction =
   async () => {
-    if (
-      !validateTransaction()
-    ) {
+    if (!calendarEnabled.value) {
+      return
+    }
+
+    if (!validateTransaction()) {
       return
     }
 
     try {
       let accountId:
-        number | null = null
+        number | null =
+        null
 
       if (
         newTransaction.transaction_type ===
-        'income'
-      ) {
-        if (
-          incomeSource.value ===
+          'income' &&
+        incomeSource.value ===
           'account'
-        ) {
-          accountId =
-            selectedAccountId.value
-              ? Number(
-                  selectedAccountId.value
-                )
-              : null
-        }
+      ) {
+        accountId =
+          selectedAccountId.value
+            ? Number(
+                selectedAccountId.value
+              )
+            : null
       }
 
       if (
@@ -1109,9 +1288,7 @@ const saveTransaction =
       const organizationId =
         getSelectedOrganizationId()
 
-      if (
-        editingId.value
-      ) {
+      if (editingId.value) {
         await $api.patch(
           `${props.apiBasePath}/${editingId.value}`,
           payload,
@@ -1193,39 +1370,35 @@ const saveTransaction =
 
       await fetchTransactions()
       await fetchAccounts()
-
       closeModal()
     } catch (error) {
-      console.error(error)
+      console.error(
+        error
+      )
 
-      if (
+      alert(
         editingId.value
-      ) {
-        alert(
-          '更新に失敗しました'
-        )
-      } else {
-        alert(
-          '追加に失敗しました'
-        )
-      }
+          ? '更新に失敗しました'
+          : '追加に失敗しました'
+      )
     }
   }
 
 const deleteTransaction =
   async () => {
-    if (
-      !editingId.value
-    ) {
+    if (!calendarEnabled.value) {
       return
     }
 
-    const confirmed =
-      confirm(
+    if (!editingId.value) {
+      return
+    }
+
+    if (
+      !confirm(
         'この記録を削除しますか？'
       )
-
-    if (!confirmed) {
+    ) {
       return
     }
 
@@ -1246,10 +1419,11 @@ const deleteTransaction =
 
       await fetchTransactions()
       await fetchAccounts()
-
       closeModal()
     } catch (error) {
-      console.error(error)
+      console.error(
+        error
+      )
 
       alert(
         '削除に失敗しました'
@@ -1257,10 +1431,13 @@ const deleteTransaction =
     }
   }
 
-onMounted(async () => {
-  try {
-    await fetchBanks()
+const initializeCalendar =
+  async () => {
+    if (!calendarEnabled.value) {
+      return
+    }
 
+    await fetchBanks()
     await fetchAccounts()
 
     const events =
@@ -1290,28 +1467,88 @@ onMounted(async () => {
           events,
 
           callbacks: {
-            onClickDate(date) {
+            onClickDate(
+              date
+            ) {
               openModalForDate(
                 date
               )
             },
 
-            onEventClick(event) {
+            onEventClick(
+              event
+            ) {
               openModalForEvent(
                 event
               )
             }
           }
         },
-        [eventsService]
+        [
+          eventsService
+        ]
       )
-  } catch (error) {
-    console.error(
-      '家計簿データの取得に失敗しました:',
-      error
-    )
   }
-})
+
+watch(
+  calendarEnabled,
+  async enabled => {
+    if (!enabled) {
+      calendarApp.value =
+        null
+
+      return
+    }
+
+    if (
+      calendarApp.value
+    ) {
+      return
+    }
+
+    try {
+      await initializeCalendar()
+    } catch (error) {
+      console.error(
+        'カレンダーの再初期化に失敗しました:',
+        error
+      )
+    }
+  }
+)
+
+onMounted(
+  async () => {
+    await fetchCalendarMaintenance()
+    connectMaintenanceChannel()
+
+    if (!calendarEnabled.value) {
+      return
+    }
+
+    try {
+      await initializeCalendar()
+    } catch (error) {
+      console.error(
+        '家計簿データの取得に失敗しました:',
+        error
+      )
+    }
+  }
+)
+
+onBeforeUnmount(
+  () => {
+    maintenanceSubscription
+      ?.unsubscribe?.()
+
+    maintenanceSubscription =
+      null
+
+    calendarApp.value =
+      null
+  }
+)
 </script>
 
 <style scoped>
@@ -1334,12 +1571,7 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background: rgba(
-    0,
-    0,
-    0,
-    0.55
-  );
+  background: rgba(0, 0, 0, 0.55);
 }
 
 .transaction-modal {
@@ -1350,12 +1582,8 @@ onMounted(async () => {
   border-radius: 16px;
   background: white;
   box-shadow:
-    0 20px 50px rgba(
-      0,
-      0,
-      0,
-      0.3
-    );
+    0 20px 50px
+    rgba(0, 0, 0, 0.3);
 }
 
 .modal-header {
@@ -1426,22 +1654,16 @@ onMounted(async () => {
     box-shadow 0.15s ease;
 }
 
-.source-option:hover:not(
-    :disabled
-  ) {
+.source-option:hover:not(:disabled) {
   color: #111827;
 }
 
 .source-option.active {
-  background: #ffffff;
+  background: #fff;
   color: #111827;
   box-shadow:
-    0 2px 8px rgba(
-      20,
-      30,
-      55,
-      0.08
-    );
+    0 2px 8px
+    rgba(20, 30, 55, 0.08);
 }
 
 .source-option:disabled {

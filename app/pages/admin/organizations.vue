@@ -1,0 +1,2436 @@
+<template>
+  <div class="admin-organizations">
+    <div class="ambient-grid"></div>
+    <div class="ambient-scan"></div>
+
+    <div class="page-heading page-enter">
+      <div>
+        <p class="eyebrow">03 / ORGANIZATION MANAGEMENT</p>
+        <h1>組織管理</h1>
+        <p class="description">登録組織・所属メンバー・利用状況を管理します</p>
+      </div>
+
+      <button
+        class="refresh-button"
+        :disabled="isLoading"
+        @click="fetchOrganizations"
+      >
+        <span class="refresh-icon">↻</span>
+        {{ isLoading ? '更新中...' : '更新' }}
+      </button>
+    </div>
+
+    <section class="control-panel panel-enter panel-delay-1">
+      <div class="panel-corner top-left"></div>
+      <div class="panel-corner top-right"></div>
+      <div class="panel-corner bottom-left"></div>
+      <div class="panel-corner bottom-right"></div>
+
+      <div class="search-box">
+        <span class="search-pulse"></span>
+        <span class="search-icon">⌕</span>
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="組織名・組織IDで検索"
+        >
+        <span class="search-label">SEARCH</span>
+      </div>
+    </section>
+
+    <section class="summary-grid">
+      <div class="summary-card summary-card-1">
+        <div class="summary-top">
+          <span class="summary-label">TOTAL ORGANIZATIONS</span>
+          <span class="summary-index">ORG-01</span>
+        </div>
+        <strong>{{ organizations.length }}</strong>
+        <span class="summary-sub">登録組織</span>
+        <div class="summary-line"></div>
+      </div>
+
+      <div class="summary-card summary-card-2">
+        <div class="summary-top">
+          <span class="summary-label">TOTAL MEMBERS</span>
+          <span class="summary-index">ORG-02</span>
+        </div>
+        <strong>{{ totalMembers }}</strong>
+        <span class="summary-sub">所属メンバー</span>
+        <div class="summary-line"></div>
+      </div>
+
+      <div class="summary-card summary-card-3">
+        <div class="summary-top">
+          <span class="summary-label">TRANSACTIONS</span>
+          <span class="summary-index">ORG-03</span>
+        </div>
+        <strong>{{ totalTransactions }}</strong>
+        <span class="summary-sub">全組織の取引</span>
+        <div class="summary-line"></div>
+      </div>
+
+      <div class="summary-card summary-card-4">
+        <div class="summary-top">
+          <span class="summary-label">SEARCH RESULT</span>
+          <span class="summary-index">ORG-04</span>
+        </div>
+        <strong>{{ filteredOrganizations.length }}</strong>
+        <span class="summary-sub">表示中の組織</span>
+        <div class="summary-line"></div>
+      </div>
+    </section>
+
+    <section class="organizations-panel panel-enter panel-delay-2">
+      <div class="panel-header">
+        <div>
+          <p class="panel-eyebrow">ORGANIZATION DATABASE</p>
+          <h2>組織一覧</h2>
+        </div>
+
+        <div class="result-meta">
+          <span class="result-dot"></span>
+          <span>{{ filteredOrganizations.length }} ORGANIZATIONS</span>
+        </div>
+      </div>
+
+      <div v-if="isLoading" class="loading-state">
+        <div class="loading-core">
+          <div class="loading-spinner"></div>
+          <span></span>
+        </div>
+
+        <p>組織情報を取得しています...</p>
+
+        <div class="loading-progress">
+          <span></span>
+        </div>
+      </div>
+
+      <div v-else-if="loadError" class="error-state">
+        <div class="error-frame">
+          <div class="error-symbol">!</div>
+        </div>
+
+        <h3>データ取得エラー</h3>
+        <p>{{ loadError }}</p>
+
+        <button @click="fetchOrganizations">
+          再試行
+        </button>
+      </div>
+
+      <div v-else-if="filteredOrganizations.length === 0" class="empty-state">
+        <div class="empty-frame">
+          <div class="empty-symbol">⌕</div>
+        </div>
+
+        <h3>該当組織なし</h3>
+        <p>検索条件に一致する組織がありません。</p>
+      </div>
+
+      <div v-else class="organization-table">
+        <div class="table-header">
+          <span>ID</span>
+          <span>組織</span>
+          <span>MEMBERS</span>
+          <span>TRANSACTIONS</span>
+          <span>登録日</span>
+          <span>操作</span>
+        </div>
+
+        <div
+          v-for="(organization, index) in filteredOrganizations"
+          :key="organization.id"
+          class="organization-row"
+          :style="{ '--row-delay': `${index * 45}ms` }"
+        >
+          <span class="row-scan"></span>
+
+          <span class="organization-id">
+            #{{ organization.id }}
+          </span>
+
+          <div class="organization-profile">
+            <div class="organization-avatar">
+              <span>{{ getInitial(organization.name) }}</span>
+            </div>
+
+            <div class="organization-info">
+              <strong>{{ organization.name }}</strong>
+              <span>{{ organization.public_id }}</span>
+            </div>
+          </div>
+
+          <span class="number-value">
+            {{ organization.member_count }}
+          </span>
+
+          <span class="number-value">
+            {{ organization.transaction_count }}
+          </span>
+
+          <span class="created-date">
+            {{ formatDate(organization.created_at) }}
+          </span>
+
+          <div class="action-group">
+            <button
+              class="detail-button"
+              @click="openOrganizationDetail(organization.id)"
+            >
+              <span>詳細</span>
+              <i>→</i>
+            </button>
+
+            <button
+              v-if="organization.deletable"
+              class="delete-button"
+              @click="deleteOrganization(organization)"
+            >
+              削除
+            </button>
+
+            <span v-else class="protected-label">
+              保護中
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <Transition name="modal">
+      <div
+        v-if="showDetailModal"
+        class="modal-overlay"
+        @click.self="closeOrganizationDetail"
+      >
+        <div class="modal-backdrop-grid"></div>
+
+        <div class="detail-modal">
+          <div class="modal-glow"></div>
+
+          <div class="modal-corner top-left"></div>
+          <div class="modal-corner top-right"></div>
+          <div class="modal-corner bottom-left"></div>
+          <div class="modal-corner bottom-right"></div>
+
+          <div class="modal-header">
+            <div>
+              <p class="modal-eyebrow">ORGANIZATION PROFILE</p>
+              <h2>組織詳細</h2>
+            </div>
+
+            <button
+              class="close-button"
+              @click="closeOrganizationDetail"
+            >
+              ×
+            </button>
+          </div>
+
+          <div v-if="isLoadingDetail" class="modal-loading">
+            <div class="modal-loading-core">
+              <div class="loading-spinner"></div>
+            </div>
+
+            <p>組織情報を取得しています...</p>
+            <span>DATABASE QUERY / ORGANIZATION</span>
+          </div>
+
+          <div
+            v-else-if="selectedOrganization"
+            class="modal-content"
+          >
+            <div class="profile-header">
+              <div class="large-avatar">
+                {{ getInitial(selectedOrganization.name) }}
+              </div>
+
+              <div class="profile-title">
+                <span>ORGANIZATION</span>
+                <h3>{{ selectedOrganization.name }}</h3>
+                <p>{{ selectedOrganization.public_id }}</p>
+              </div>
+
+              <div
+                class="profile-status"
+                :class="{
+                  protected: !selectedOrganization.deletable
+                }"
+              >
+                <span></span>
+                {{ selectedOrganization.deletable ? 'ACTIVE' : 'PROTECTED' }}
+              </div>
+            </div>
+
+            <div class="detail-grid">
+              <div class="detail-item">
+                <span>ORGANIZATION ID</span>
+                <strong>#{{ selectedOrganization.id }}</strong>
+              </div>
+
+              <div class="detail-item">
+                <span>PUBLIC ID</span>
+                <strong>{{ selectedOrganization.public_id }}</strong>
+              </div>
+
+              <div class="detail-item">
+                <span>MEMBERS</span>
+                <strong>{{ selectedOrganization.member_count }}</strong>
+              </div>
+
+              <div class="detail-item">
+                <span>TRANSACTIONS</span>
+                <strong>{{ selectedOrganization.transaction_count }}</strong>
+              </div>
+
+              <div class="detail-item">
+                <span>REGISTERED</span>
+                <strong>{{ formatDate(selectedOrganization.created_at) }}</strong>
+              </div>
+
+              <div class="detail-item">
+                <span>STATUS</span>
+                <strong
+                  :class="{
+                    'status-deletable': selectedOrganization.deletable,
+                    'status-protected': !selectedOrganization.deletable
+                  }"
+                >
+                  {{ selectedOrganization.deletable ? '削除可能' : '保護中' }}
+                </strong>
+              </div>
+            </div>
+
+            <div class="members-section">
+              <div class="section-title">
+                <div>
+                  <p>ORGANIZATION MEMBERS</p>
+                  <h4>所属メンバー</h4>
+                </div>
+
+                <span class="member-count-badge">
+                  {{ selectedOrganization.members?.length ?? 0 }}
+                </span>
+              </div>
+
+              <div
+                v-if="selectedOrganization.members?.length"
+                class="member-list"
+              >
+                <div
+                  v-for="(member, index) in selectedOrganization.members"
+                  :key="member.membership_id"
+                  class="member-item"
+                  :style="{ '--member-delay': `${index * 40}ms` }"
+                >
+                  <div class="member-avatar">
+                    {{ getInitial(member.username) }}
+                  </div>
+
+                  <div class="member-info">
+                    <strong>{{ member.username }}</strong>
+                    <span>USER #{{ member.user_id }}</span>
+                    <small>{{ member.public_id }}</small>
+                  </div>
+
+                  <span class="member-state">
+                    ACTIVE
+                  </span>
+                </div>
+              </div>
+
+              <div v-else class="no-members">
+                所属メンバーはいません。
+              </div>
+            </div>
+
+            <div
+              v-if="selectedOrganization.deletable"
+              class="danger-zone"
+            >
+              <div>
+                <p class="danger-label">DANGER ZONE</p>
+                <strong>組織を削除</strong>
+                <span>メンバー0人・取引0件のため削除できます。</span>
+              </div>
+
+              <button
+                class="danger-delete-button"
+                @click="deleteOrganization(selectedOrganization)"
+              >
+                <span>組織を削除</span>
+                <i>×</i>
+              </button>
+            </div>
+
+            <div v-else class="protected-zone">
+              <div class="protected-icon">◆</div>
+
+              <div>
+                <p class="protected-label-large">PROTECTED ORGANIZATION</p>
+                <strong>この組織は削除できません</strong>
+                <span>メンバーが所属しているか、取引データが存在します。</span>
+              </div>
+            </div>
+          </div>
+
+          <div v-else class="error-state modal-error">
+            <div class="error-frame">
+              <div class="error-symbol">!</div>
+            </div>
+
+            <h3>組織情報を取得できませんでした</h3>
+            <p>もう一度詳細ボタンを押してください。</p>
+          </div>
+
+          <div class="modal-footer">
+            <div class="modal-footer-status">
+              <span></span>
+              SECURE ADMIN ACCESS
+            </div>
+
+            <button
+              class="modal-close-button"
+              @click="closeOrganizationDetail"
+            >
+              閉じる
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </div>
+</template>
+
+<script setup lang="ts">
+definePageMeta({
+  layout: 'admin'
+})
+
+interface OrganizationMember {
+  membership_id: number
+  user_id: number
+  username: string
+  public_id: string
+}
+
+interface Organization {
+  id: number
+  name: string
+  public_id: string
+  created_at: string
+  member_count: number
+  transaction_count: number
+  deletable: boolean
+  members?: OrganizationMember[]
+}
+
+const { $api } = useNuxtApp()
+
+const organizations = ref<Organization[]>([])
+const searchQuery = ref('')
+const isLoading = ref(true)
+const loadError = ref('')
+const showDetailModal = ref(false)
+const isLoadingDetail = ref(false)
+const selectedOrganization = ref<Organization | null>(null)
+
+const totalMembers = computed(() =>
+  organizations.value.reduce(
+    (total, organization) =>
+      total + organization.member_count,
+    0
+  )
+)
+
+const totalTransactions = computed(() =>
+  organizations.value.reduce(
+    (total, organization) =>
+      total + organization.transaction_count,
+    0
+  )
+)
+
+const filteredOrganizations = computed(() => {
+  const keyword = searchQuery.value.trim().toLowerCase()
+
+  if (!keyword) {
+    return organizations.value
+  }
+
+  return organizations.value.filter(
+    organization =>
+      organization.name.toLowerCase().includes(keyword) ||
+      organization.public_id.toLowerCase().includes(keyword)
+  )
+})
+
+const fetchOrganizations = async () => {
+  isLoading.value = true
+  loadError.value = ''
+
+  try {
+    const response =
+      await $api.get<Organization[]>(
+        '/admin/organizations'
+      )
+
+    organizations.value =
+      Array.isArray(response.data)
+        ? response.data
+        : []
+  } catch (error: any) {
+    console.error(
+      '組織一覧の取得に失敗しました:',
+      error
+    )
+
+    if (error?.response?.status === 403) {
+      loadError.value =
+        '管理者権限が必要です。'
+    } else {
+      loadError.value =
+        '組織一覧の取得に失敗しました。'
+    }
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const openOrganizationDetail = async (
+  organizationId: number
+) => {
+  showDetailModal.value = true
+  isLoadingDetail.value = true
+  selectedOrganization.value = null
+
+  try {
+    const response =
+      await $api.get<Organization>(
+        `/admin/organizations/${organizationId}`
+      )
+
+    selectedOrganization.value =
+      response.data
+  } catch (error) {
+    console.error(
+      '組織詳細の取得に失敗しました:',
+      error
+    )
+
+    selectedOrganization.value = null
+  } finally {
+    isLoadingDetail.value = false
+  }
+}
+
+const closeOrganizationDetail = () => {
+  if (isLoadingDetail.value) {
+    return
+  }
+
+  showDetailModal.value = false
+  selectedOrganization.value = null
+}
+
+const deleteOrganization = async (
+  organization: Organization
+) => {
+  if (!organization.deletable) {
+    window.alert(
+      'この組織は削除できません。'
+    )
+    return
+  }
+
+  const confirmed =
+    window.confirm(
+      `${organization.name} を削除しますか？\nメンバー0人・取引0件の組織のみ削除できます。\nこの操作は取り消せません。`
+    )
+
+  if (!confirmed) {
+    return
+  }
+
+  try {
+    await $api.delete(
+      `/admin/organizations/${organization.id}`
+    )
+
+    organizations.value =
+      organizations.value.filter(
+        item =>
+          item.id !== organization.id
+      )
+
+    if (
+      selectedOrganization.value?.id ===
+      organization.id
+    ) {
+      closeOrganizationDetail()
+    }
+
+    window.alert(
+      '組織を削除しました。'
+    )
+  } catch (error: any) {
+    console.error(
+      '組織の削除に失敗しました:',
+      error
+    )
+
+    window.alert(
+      error?.response?.data?.message ||
+      '組織の削除に失敗しました。'
+    )
+  }
+}
+
+const getInitial = (
+  value: string
+) => {
+  return (
+    value?.charAt(0)?.toUpperCase() ||
+    '?'
+  )
+}
+
+const formatDate = (
+  date: string
+) => {
+  return new Date(date).toLocaleDateString(
+    'ja-JP',
+    {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }
+  )
+}
+
+onMounted(() => {
+  fetchOrganizations()
+})
+</script>
+
+<style scoped>
+.admin-organizations {
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  padding: 32px;
+  box-sizing: border-box;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 82% 4%, rgba(34, 211, 238, 0.07), transparent 25%),
+    radial-gradient(circle at 8% 92%, rgba(59, 130, 246, 0.045), transparent 22%),
+    linear-gradient(rgba(0, 200, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 200, 255, 0.025) 1px, transparent 1px),
+    #050a12;
+  background-size: auto, auto, 32px 32px, 32px 32px, auto;
+  color: #e6f7ff;
+}
+
+.ambient-grid {
+  position: absolute;
+  inset: 0;
+  z-index: -3;
+  pointer-events: none;
+  opacity: 0.22;
+  background-image:
+    linear-gradient(rgba(57, 216, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(57, 216, 255, 0.035) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: linear-gradient(to bottom, black, transparent 92%);
+}
+
+.ambient-scan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -20%;
+  height: 18%;
+  z-index: -2;
+  pointer-events: none;
+  opacity: 0.18;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(57, 216, 255, 0.08),
+    transparent
+  );
+  filter: blur(12px);
+  animation: ambient-scan 10s linear infinite;
+}
+
+.page-heading,
+.control-panel,
+.summary-grid,
+.organizations-panel {
+  width: min(100%, 1400px);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.page-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.eyebrow,
+.panel-eyebrow,
+.modal-eyebrow {
+  margin: 0 0 8px;
+  color: #39d8ff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.page-heading h1 {
+  margin: 0;
+  color: #f1fbff;
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
+.description {
+  margin: 8px 0 0;
+  color: #7e98a8;
+  font-size: 13px;
+}
+
+.refresh-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 40px;
+  padding: 0 15px;
+  border: 1px solid #214457;
+  background: rgba(8, 22, 34, 0.8);
+  color: #8de8ff;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  overflow: hidden;
+  transition:
+    transform 0.22s ease,
+    border-color 0.22s ease,
+    background 0.22s ease,
+    box-shadow 0.22s ease;
+}
+
+.refresh-button::before {
+  position: absolute;
+  left: -30%;
+  bottom: 0;
+  width: 30%;
+  height: 1px;
+  content: "";
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #39d8ff,
+    transparent
+  );
+  opacity: 0;
+}
+
+.refresh-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: #39d8ff;
+  background: rgba(10, 34, 48, 0.9);
+  box-shadow: 0 0 20px rgba(57, 216, 255, 0.06);
+}
+
+.refresh-button:hover:not(:disabled)::before {
+  opacity: 1;
+  animation: button-scan 0.8s ease-out;
+}
+
+.refresh-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.refresh-icon {
+  display: inline-block;
+  font-size: 17px;
+  line-height: 1;
+}
+
+.control-panel,
+.organizations-panel,
+.summary-card {
+  border: 1px solid #193444;
+  background: rgba(6, 16, 26, 0.92);
+  box-shadow:
+    inset 0 0 30px rgba(0, 150, 220, 0.025),
+    0 12px 35px rgba(0, 0, 0, 0.1);
+}
+
+.control-panel {
+  position: relative;
+  margin-bottom: 16px;
+  padding: 16px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.panel-corner {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: rgba(57, 216, 255, 0.3);
+  pointer-events: none;
+}
+
+.panel-corner.top-left {
+  left: 8px;
+  top: 8px;
+  border-top: 1px solid;
+  border-left: 1px solid;
+}
+
+.panel-corner.top-right {
+  right: 8px;
+  top: 8px;
+  border-top: 1px solid;
+  border-right: 1px solid;
+}
+
+.panel-corner.bottom-left {
+  left: 8px;
+  bottom: 8px;
+  border-bottom: 1px solid;
+  border-left: 1px solid;
+}
+
+.panel-corner.bottom-right {
+  right: 8px;
+  bottom: 8px;
+  border-bottom: 1px solid;
+  border-right: 1px solid;
+}
+
+.search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 42px;
+  padding: 0 13px;
+  border: 1px solid #1f4355;
+  background: #07121c;
+  box-sizing: border-box;
+  overflow: hidden;
+  transition:
+    border-color 0.22s ease,
+    box-shadow 0.22s ease;
+}
+
+.search-box:focus-within {
+  border-color: rgba(57, 216, 255, 0.5);
+  box-shadow:
+    0 0 0 3px rgba(57, 216, 255, 0.035),
+    inset 0 0 20px rgba(57, 216, 255, 0.025);
+}
+
+.search-pulse {
+  width: 5px;
+  height: 5px;
+  flex-shrink: 0;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: #39d8ff;
+  box-shadow: 0 0 8px rgba(57, 216, 255, 0.7);
+  animation: status-pulse 1.8s ease-in-out infinite;
+}
+
+.search-icon {
+  margin-right: 9px;
+  color: #39d8ff;
+  font-size: 18px;
+}
+
+.search-box input {
+  width: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: #e6f7ff;
+  font-size: 12px;
+}
+
+.search-box input::placeholder {
+  color: #58717f;
+}
+
+.search-label {
+  margin-left: 10px;
+  color: #365a67;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.summary-card {
+  position: relative;
+  padding: 17px;
+  overflow: hidden;
+  animation: summary-enter 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transition:
+    transform 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.summary-card-1 {
+  animation-delay: 0.08s;
+}
+
+.summary-card-2 {
+  animation-delay: 0.14s;
+}
+
+.summary-card-3 {
+  animation-delay: 0.2s;
+}
+
+.summary-card-4 {
+  animation-delay: 0.26s;
+}
+
+.summary-card::before {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 28%;
+  height: 1px;
+  content: "";
+  background: #39d8ff;
+  box-shadow: 0 0 10px rgba(57, 216, 255, 0.4);
+}
+
+.summary-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(57, 216, 255, 0.24);
+  box-shadow:
+    inset 0 0 30px rgba(0, 150, 220, 0.03),
+    0 12px 28px rgba(0, 0, 0, 0.16);
+}
+
+.summary-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.summary-label {
+  display: block;
+  color: #557481;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.summary-index {
+  color: #2e515f;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.summary-card strong {
+  display: block;
+  margin-top: 7px;
+  color: #ebfbff;
+  font-size: 28px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.summary-sub {
+  display: block;
+  margin-top: 3px;
+  color: #6f8792;
+  font-size: 10px;
+}
+
+.summary-line {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 35%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    rgba(57, 216, 255, 0.75),
+    transparent
+  );
+  animation: summary-line 3s ease-in-out infinite;
+}
+
+.organizations-panel {
+  margin: 0 auto;
+  overflow: hidden;
+  animation: panel-enter 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
+}
+
+.panel-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  border-bottom: 1px solid #173443;
+  overflow: hidden;
+}
+
+.panel-header::after {
+  position: absolute;
+  left: -30%;
+  bottom: 0;
+  width: 30%;
+  height: 1px;
+  content: "";
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(57, 216, 255, 0.5),
+    transparent
+  );
+  animation: panel-header-scan 5s linear infinite;
+}
+
+.panel-header h2 {
+  margin: 0;
+  color: #eaf9fd;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.result-meta {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #50717f;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.result-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #39d8ff;
+  box-shadow: 0 0 8px rgba(57, 216, 255, 0.65);
+  animation: status-pulse 1.8s ease-in-out infinite;
+}
+
+.organization-table {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table-header,
+.organization-row {
+  display: grid;
+  grid-template-columns:
+    70px
+    minmax(250px, 1.8fr)
+    110px
+    130px
+    130px
+    220px;
+  align-items: center;
+  gap: 12px;
+  min-width: 1050px;
+  padding: 13px 20px;
+}
+
+.table-header {
+  border-bottom: 1px solid #102b39;
+  background: #07131d;
+  color: #54717e;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.organization-row {
+  position: relative;
+  min-height: 74px;
+  border-bottom: 1px solid #102733;
+  overflow: hidden;
+  animation: row-enter 0.45s ease both;
+  animation-delay: var(--row-delay);
+  transition:
+    background 0.22s ease,
+    border-color 0.22s ease;
+}
+
+.organization-row:last-child {
+  border-bottom: none;
+}
+
+.organization-row:hover {
+  background: rgba(21, 48, 62, 0.23);
+}
+
+.organization-row::before {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2px;
+  height: 0;
+  content: "";
+  background: #39d8ff;
+  box-shadow: 0 0 9px rgba(57, 216, 255, 0.5);
+  transition: height 0.25s ease;
+}
+
+.organization-row:hover::before {
+  height: 100%;
+}
+
+.row-scan {
+  position: absolute;
+  left: -25%;
+  bottom: 0;
+  width: 25%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(57, 216, 255, 0.45),
+    transparent
+  );
+  opacity: 0;
+  pointer-events: none;
+}
+
+.organization-row:hover .row-scan {
+  opacity: 1;
+  animation: row-scan 0.9s ease-out;
+}
+
+.organization-id {
+  color: #63818e;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.organization-profile {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+
+.organization-avatar,
+.large-avatar,
+.member-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid #23556a;
+  background:
+    linear-gradient(145deg, rgba(57, 216, 255, 0.07), rgba(9, 26, 37, 0.9)),
+    #091a25;
+  color: #55dcff;
+  font-weight: 800;
+}
+
+.organization-avatar {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  font-size: 12px;
+  overflow: hidden;
+}
+
+.organization-avatar::after {
+  position: absolute;
+  left: -30%;
+  bottom: 0;
+  width: 30%;
+  height: 1px;
+  content: "";
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(57, 216, 255, 0.7),
+    transparent
+  );
+}
+
+.organization-row:hover .organization-avatar::after {
+  animation: avatar-scan 0.8s ease-out;
+}
+
+.organization-info {
+  min-width: 0;
+}
+
+.organization-info strong {
+  display: block;
+  color: #dff8ff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.organization-info span {
+  display: block;
+  margin-top: 3px;
+  color: #5d7a87;
+  font-size: 9px;
+  word-break: break-all;
+}
+
+.number-value {
+  color: #c9eff8;
+  font-size: 12px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.created-date {
+  color: #6e8791;
+  font-size: 10px;
+}
+
+.action-group {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+}
+
+.detail-button,
+.delete-button {
+  position: relative;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid;
+  background: transparent;
+  font-size: 9px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  transition:
+    border-color 0.22s ease,
+    color 0.22s ease,
+    background 0.22s ease,
+    transform 0.22s ease;
+}
+
+.detail-button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border-color: #34515d;
+  color: #93b5c1;
+}
+
+.detail-button:hover {
+  transform: translateY(-1px);
+  border-color: #4c7381;
+  color: #cbeef7;
+  background: rgba(57, 216, 255, 0.035);
+}
+
+.detail-button i {
+  font-style: normal;
+  color: #4d7380;
+  transition: transform 0.2s ease;
+}
+
+.detail-button:hover i {
+  transform: translateX(3px);
+  color: #39d8ff;
+}
+
+.delete-button {
+  border-color: #70473f;
+  color: #ff9b87;
+}
+
+.delete-button:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 105, 84, 0.06);
+  border-color: #a95b50;
+}
+
+.protected-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid #35505b;
+  color: #708994;
+  font-size: 9px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.loading-state,
+.error-state,
+.empty-state {
+  min-height: 360px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.loading-state p,
+.error-state p,
+.empty-state p {
+  margin: 12px 0 0;
+  color: #637d89;
+  font-size: 11px;
+}
+
+.loading-core {
+  position: relative;
+  width: 46px;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(57, 216, 255, 0.16);
+  border-radius: 50%;
+}
+
+.loading-core::before,
+.loading-core::after {
+  position: absolute;
+  inset: 5px;
+  content: "";
+  border: 1px solid rgba(57, 216, 255, 0.09);
+  border-radius: 50%;
+}
+
+.loading-core::after {
+  inset: 12px;
+  border-color: rgba(57, 216, 255, 0.2);
+}
+
+.loading-spinner {
+  width: 28px;
+  height: 28px;
+  border: 2px solid #1d3a48;
+  border-top-color: #39d8ff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.loading-core > span {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #39d8ff;
+  box-shadow: 0 0 9px rgba(57, 216, 255, 0.8);
+  animation: status-pulse 1.2s ease-in-out infinite;
+}
+
+.loading-progress {
+  position: relative;
+  width: min(260px, 80%);
+  height: 1px;
+  margin-top: 20px;
+  overflow: hidden;
+  background: #16313e;
+}
+
+.loading-progress span {
+  position: absolute;
+  left: -30%;
+  top: 0;
+  width: 30%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #39d8ff,
+    transparent
+  );
+  animation: loading-progress 1.1s linear infinite;
+}
+
+.error-frame,
+.empty-frame {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #68423c;
+}
+
+.error-frame::before,
+.error-frame::after,
+.empty-frame::before,
+.empty-frame::after {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  content: "";
+  border-color: rgba(255, 139, 120, 0.5);
+}
+
+.error-frame::before,
+.empty-frame::before {
+  left: -1px;
+  top: -1px;
+  border-top: 1px solid;
+  border-left: 1px solid;
+}
+
+.error-frame::after,
+.empty-frame::after {
+  right: -1px;
+  bottom: -1px;
+  border-right: 1px solid;
+  border-bottom: 1px solid;
+}
+
+.empty-frame {
+  border-color: #2b4c5b;
+}
+
+.error-symbol,
+.empty-symbol {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ff8b78;
+  font-size: 22px;
+}
+
+.empty-symbol {
+  color: #59cfe8;
+}
+
+.error-state h3,
+.empty-state h3 {
+  margin: 14px 0 0;
+  color: #dcecf2;
+  font-size: 14px;
+}
+
+.error-state button {
+  margin-top: 14px;
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid #3b6473;
+  background: transparent;
+  color: #9edcea;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease,
+    background 0.2s ease;
+}
+
+.error-state button:hover {
+  border-color: #39d8ff;
+  color: #39d8ff;
+  background: rgba(57, 216, 255, 0.035);
+}
+
+.modal-enter-active,
+.modal-leave-active {
+  transition:
+    opacity 0.25s ease,
+    backdrop-filter 0.25s ease;
+}
+
+.modal-enter-active .detail-modal,
+.modal-leave-active .detail-modal {
+  transition:
+    opacity 0.28s ease,
+    transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+
+.modal-enter-from .detail-modal,
+.modal-leave-to .detail-modal {
+  opacity: 0;
+  transform: translateY(12px) scale(0.985);
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow: hidden;
+  background: rgba(1, 6, 11, 0.82);
+  backdrop-filter: blur(6px);
+}
+
+.modal-backdrop-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.13;
+  background-image:
+    linear-gradient(rgba(57, 216, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(57, 216, 255, 0.03) 1px, transparent 1px);
+  background-size: 32px 32px;
+  animation: modal-grid 12s linear infinite;
+}
+
+.detail-modal {
+  position: relative;
+  width: min(100%, 720px);
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid #235064;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(57, 216, 255, 0.035), transparent 35%),
+    #06111a;
+  box-shadow:
+    0 0 0 1px rgba(57, 216, 255, 0.04),
+    0 24px 100px rgba(0, 0, 0, 0.55),
+    0 0 45px rgba(57, 216, 255, 0.035);
+}
+
+.modal-glow {
+  position: absolute;
+  left: 50%;
+  top: -100px;
+  width: 240px;
+  height: 240px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: rgba(57, 216, 255, 0.035);
+  filter: blur(40px);
+  pointer-events: none;
+}
+
+.modal-corner {
+  position: absolute;
+  z-index: 4;
+  width: 14px;
+  height: 14px;
+  border-color: rgba(57, 216, 255, 0.35);
+  pointer-events: none;
+}
+
+.modal-corner.top-left {
+  left: 8px;
+  top: 8px;
+  border-left: 1px solid;
+  border-top: 1px solid;
+}
+
+.modal-corner.top-right {
+  right: 8px;
+  top: 8px;
+  border-right: 1px solid;
+  border-top: 1px solid;
+}
+
+.modal-corner.bottom-left {
+  left: 8px;
+  bottom: 8px;
+  border-left: 1px solid;
+  border-bottom: 1px solid;
+}
+
+.modal-corner.bottom-right {
+  right: 8px;
+  bottom: 8px;
+  border-right: 1px solid;
+  border-bottom: 1px solid;
+}
+
+.modal-header {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 20px 22px;
+  border-bottom: 1px solid #173443;
+}
+
+.modal-header h2 {
+  margin: 0;
+  color: #edfaff;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.close-button {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #284553;
+  background: transparent;
+  color: #83a3af;
+  font-size: 20px;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease,
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.close-button:hover {
+  transform: rotate(90deg);
+  border-color: #39d8ff;
+  background: rgba(57, 216, 255, 0.035);
+  color: #39d8ff;
+}
+
+.modal-loading {
+  min-height: 340px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #6f8994;
+  font-size: 11px;
+}
+
+.modal-loading-core {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(57, 216, 255, 0.17);
+  border-radius: 50%;
+  box-shadow: inset 0 0 20px rgba(57, 216, 255, 0.03);
+}
+
+.modal-loading > span {
+  margin-top: 8px;
+  color: #3d5b67;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.modal-content {
+  position: relative;
+  z-index: 2;
+  padding: 22px;
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 16px;
+  border: 1px solid #183a48;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(57, 216, 255, 0.04),
+      rgba(8, 23, 34, 0.9)
+    ),
+    #081722;
+}
+
+.large-avatar {
+  position: relative;
+  width: 58px;
+  height: 58px;
+  border-radius: 10px;
+  font-size: 20px;
+  box-shadow:
+    inset 0 0 24px rgba(57, 216, 255, 0.035),
+    0 0 20px rgba(57, 216, 255, 0.03);
+}
+
+.large-avatar::after {
+  position: absolute;
+  left: 5px;
+  right: 5px;
+  bottom: 5px;
+  height: 1px;
+  content: "";
+  background: rgba(57, 216, 255, 0.25);
+}
+
+.profile-title {
+  min-width: 0;
+}
+
+.profile-title > span {
+  color: #52717d;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.profile-title h3 {
+  margin: 4px 0 0;
+  color: #e8f9fd;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.profile-title p {
+  margin: 5px 0 0;
+  color: #64818e;
+  font-size: 10px;
+  word-break: break-all;
+}
+
+.profile-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  padding: 6px 9px;
+  border: 1px solid rgba(57, 216, 255, 0.18);
+  color: #65e5ff;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.profile-status > span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #39d8ff;
+  box-shadow: 0 0 7px rgba(57, 216, 255, 0.7);
+  animation: status-pulse 1.5s ease-in-out infinite;
+}
+
+.profile-status.protected {
+  border-color: rgba(255, 208, 0, 0.2);
+  color: #ffd866;
+}
+
+.profile-status.protected > span {
+  background: #ffd000;
+  box-shadow: 0 0 7px rgba(255, 208, 0, 0.55);
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+  margin-top: 12px;
+}
+
+.detail-item {
+  position: relative;
+  padding: 13px;
+  border: 1px solid #163440;
+  background: #07131d;
+  overflow: hidden;
+}
+
+.detail-item::after {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 22%;
+  height: 1px;
+  content: "";
+  background: linear-gradient(
+    90deg,
+    rgba(57, 216, 255, 0.35),
+    transparent
+  );
+}
+
+.detail-item span {
+  display: block;
+  color: #52707d;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.detail-item strong {
+  display: block;
+  margin-top: 5px;
+  color: #d8f5fc;
+  font-size: 12px;
+  font-weight: 800;
+  word-break: break-word;
+}
+
+.status-deletable {
+  color: #7ff0c0 !important;
+}
+
+.status-protected {
+  color: #ff9f8d !important;
+}
+
+.members-section {
+  margin-top: 20px;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.section-title p {
+  margin: 0 0 3px;
+  color: #52707d;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.section-title h4 {
+  margin: 0;
+  color: #d8f5fc;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.member-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 22px;
+  padding: 0 7px;
+  border: 1px solid #284d5b;
+  color: #67d8ed;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.member-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.member-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px;
+  border: 1px solid #173642;
+  background: #07131d;
+  overflow: hidden;
+  animation: member-enter 0.4s ease both;
+  animation-delay: var(--member-delay);
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.member-item:hover {
+  transform: translateX(2px);
+  border-color: rgba(57, 216, 255, 0.22);
+  background: #081722;
+}
+
+.member-item::after {
+  position: absolute;
+  left: -25%;
+  bottom: 0;
+  width: 25%;
+  height: 1px;
+  content: "";
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(57, 216, 255, 0.35),
+    transparent
+  );
+  opacity: 0;
+}
+
+.member-item:hover::after {
+  opacity: 1;
+  animation: member-scan 0.8s ease-out;
+}
+
+.member-avatar {
+  width: 35px;
+  height: 35px;
+  border-radius: 8px;
+  font-size: 11px;
+}
+
+.member-info {
+  min-width: 0;
+}
+
+.member-info strong {
+  display: block;
+  color: #d8f5fc;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.member-info span,
+.member-info small {
+  display: block;
+  margin-top: 3px;
+  color: #58737f;
+  font-size: 8px;
+}
+
+.member-info small {
+  color: #49626e;
+}
+
+.member-state {
+  margin-left: auto;
+  color: #63dff2;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.no-members {
+  padding: 18px;
+  border: 1px solid #173642;
+  background: #07131d;
+  color: #607b87;
+  text-align: center;
+  font-size: 10px;
+}
+
+.danger-zone,
+.protected-zone {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-top: 20px;
+  padding: 15px;
+}
+
+.danger-zone {
+  position: relative;
+  border: 1px solid #633c38;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(93, 34, 28, 0.18),
+      rgba(50, 18, 15, 0.08)
+    );
+  overflow: hidden;
+}
+
+.danger-zone::before {
+  position: absolute;
+  left: -35%;
+  top: 0;
+  width: 35%;
+  height: 1px;
+  content: "";
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 99, 78, 0.5),
+    transparent
+  );
+  animation: danger-scan 4s linear infinite;
+}
+
+.protected-zone {
+  border: 1px solid #284452;
+  background: rgba(12, 31, 42, 0.6);
+}
+
+.protected-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 208, 0, 0.2);
+  color: #ffd000;
+  font-size: 10px;
+}
+
+.danger-label {
+  margin: 0 0 4px;
+  color: #ff7f6b;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.danger-zone strong {
+  display: block;
+  color: #ffd1c8;
+  font-size: 11px;
+}
+
+.danger-zone span {
+  display: block;
+  margin-top: 3px;
+  color: #9d7068;
+  font-size: 9px;
+}
+
+.danger-delete-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  height: 36px;
+  padding: 0 13px;
+  border: 1px solid #8c4a41;
+  background: transparent;
+  color: #ff9582;
+  font-size: 9px;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.danger-delete-button:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 92, 72, 0.08);
+  border-color: #bb5d50;
+}
+
+.danger-delete-button i {
+  font-style: normal;
+  font-size: 13px;
+}
+
+.protected-label-large {
+  margin: 0 0 4px;
+  color: #6c9cad;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.protected-zone strong {
+  display: block;
+  color: #b7cbd3;
+  font-size: 11px;
+}
+
+.protected-zone span {
+  display: block;
+  margin-top: 3px;
+  color: #627d88;
+  font-size: 9px;
+}
+
+.modal-error {
+  min-height: 340px;
+}
+
+.modal-footer {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 22px 20px;
+  border-top: 1px solid #173443;
+}
+
+.modal-footer-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #466672;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.modal-footer-status span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #39d8ff;
+  box-shadow: 0 0 7px rgba(57, 216, 255, 0.7);
+}
+
+.modal-close-button {
+  height: 36px;
+  min-width: 90px;
+  border: 1px solid #315566;
+  background: transparent;
+  color: #9ed9e7;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease,
+    background 0.2s ease;
+}
+
+.modal-close-button:hover {
+  border-color: #39d8ff;
+  background: rgba(57, 216, 255, 0.035);
+  color: #39d8ff;
+}
+
+.page-enter {
+  animation: page-enter 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.panel-enter {
+  animation: panel-enter 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.panel-delay-1 {
+  animation-delay: 0.08s;
+}
+
+.panel-delay-2 {
+  animation-delay: 0.16s;
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.995);
+    filter: blur(2px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes panel-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+    filter: blur(1.5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes summary-enter {
+  from {
+    opacity: 0;
+    transform: translateY(9px) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes row-enter {
+  from {
+    opacity: 0;
+    transform: translateX(7px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes member-enter {
+  from {
+    opacity: 0;
+    transform: translateX(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes ambient-scan {
+  0% {
+    transform: translateY(-100%);
+  }
+
+  100% {
+    transform: translateY(680%);
+  }
+}
+
+@keyframes panel-header-scan {
+  0% {
+    left: -30%;
+  }
+
+  55%,
+  100% {
+    left: 110%;
+  }
+}
+
+@keyframes button-scan {
+  from {
+    left: -30%;
+  }
+
+  to {
+    left: 110%;
+  }
+}
+
+@keyframes row-scan {
+  from {
+    left: -25%;
+  }
+
+  to {
+    left: 110%;
+  }
+}
+
+@keyframes avatar-scan {
+  from {
+    left: -30%;
+  }
+
+  to {
+    left: 110%;
+  }
+}
+
+@keyframes member-scan {
+  from {
+    left: -25%;
+  }
+
+  to {
+    left: 110%;
+  }
+}
+
+@keyframes summary-line {
+  0%,
+  100% {
+    width: 25%;
+    opacity: 0.4;
+  }
+
+  50% {
+    width: 55%;
+    opacity: 1;
+  }
+}
+
+@keyframes status-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.45;
+    transform: scale(0.82);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes loading-progress {
+  from {
+    left: -30%;
+  }
+
+  to {
+    left: 100%;
+  }
+}
+
+@keyframes modal-grid {
+  from {
+    background-position: 0 0;
+  }
+
+  to {
+    background-position: 32px 32px;
+  }
+}
+
+@keyframes danger-scan {
+  from {
+    left: -35%;
+  }
+
+  to {
+    left: 110%;
+  }
+}
+
+@media (max-width: 1100px) {
+  .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .table-header {
+    display: none;
+  }
+
+  .organization-table {
+    overflow-x: visible;
+  }
+
+  .organization-row {
+    grid-template-columns: 1fr;
+    min-width: 0;
+    gap: 9px;
+    padding: 16px;
+  }
+
+  .action-group {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 700px) {
+  .admin-organizations {
+    padding: 16px;
+  }
+
+  .page-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .refresh-button {
+    align-self: flex-start;
+  }
+
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .search-label {
+    display: none;
+  }
+
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-overlay {
+    padding: 10px;
+  }
+
+  .profile-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .profile-status {
+    margin-left: 0;
+  }
+
+  .danger-zone,
+  .protected-zone {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .danger-delete-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .modal-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .modal-close-button {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ambient-grid,
+  .ambient-scan,
+  .search-pulse,
+  .result-dot,
+  .summary-card,
+  .summary-line,
+  .organizations-panel,
+  .organization-row,
+  .row-scan,
+  .organization-avatar::after,
+  .loading-spinner,
+  .loading-core > span,
+  .loading-progress span,
+  .modal-backdrop-grid,
+  .profile-status > span,
+  .member-item,
+  .member-item::after,
+  .danger-zone::before,
+  .modal-footer-status span {
+    animation: none;
+  }
+
+  .page-enter,
+  .panel-enter {
+    animation: none;
+  }
+}
+</style>
