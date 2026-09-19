@@ -1,159 +1,263 @@
 <template>
+
   <div class="admin-transactions">
+
     <div class="ambient-grid"></div>
+
     <div class="ambient-scan"></div>
 
     <div class="page-heading page-enter">
+
       <div>
+
         <p class="eyebrow">04 / TRANSACTION MANAGEMENT</p>
+
         <h1>取引管理</h1>
+
         <p class="description">システム内の取引データを監視・確認します</p>
+
       </div>
 
       <button
+
         class="refresh-button"
+
         :disabled="isLoading"
+
         @click="fetchTransactions"
+
       >
+
         <span
+
           class="refresh-icon"
+
           :class="{ spinning: isLoading }"
+
         >
+
           ↻
+
         </span>
+
         {{ isLoading ? '更新中...' : '更新' }}
+
       </button>
+
     </div>
 
     <section class="control-panel panel-enter panel-delay-1">
+
       <div class="panel-corner top-left"></div>
+
       <div class="panel-corner top-right"></div>
+
       <div class="panel-corner bottom-left"></div>
+
       <div class="panel-corner bottom-right"></div>
 
       <div class="search-box">
+
         <span class="search-pulse"></span>
+
         <span class="search-icon">⌕</span>
 
         <input
+
           v-model="searchQuery"
+
           type="text"
+
           placeholder="ユーザー・組織・カテゴリ・IDで検索"
+
         >
 
         <span class="search-label">
+
           DATABASE SEARCH
+
         </span>
+
       </div>
 
       <div class="filter-row">
+
         <div class="filter-group">
+
           <span class="filter-label">TYPE</span>
 
           <button
+
             class="filter-button"
+
             :class="{ active: transactionTypeFilter === 'all' }"
+
             @click="transactionTypeFilter = 'all'"
+
           >
+
             すべて
+
           </button>
 
           <button
+
             class="filter-button income-filter"
+
             :class="{ active: transactionTypeFilter === 'income' }"
+
             @click="transactionTypeFilter = 'income'"
+
           >
+
             <span></span>
+
             収入
+
           </button>
 
           <button
+
             class="filter-button expense-filter"
+
             :class="{ active: transactionTypeFilter === 'expense' }"
+
             @click="transactionTypeFilter = 'expense'"
+
           >
+
             <span></span>
+
             支出
+
           </button>
+
         </div>
 
         <div class="filter-group">
+
           <span class="filter-label">SCOPE</span>
 
           <button
+
             class="filter-button"
+
             :class="{ active: transactionScopeFilter === 'all' }"
+
             @click="transactionScopeFilter = 'all'"
+
           >
+
             すべて
+
           </button>
 
           <button
+
             class="filter-button"
+
             :class="{ active: transactionScopeFilter === 'personal' }"
+
             @click="transactionScopeFilter = 'personal'"
+
           >
+
             個人
+
           </button>
 
           <button
+
             class="filter-button"
+
             :class="{ active: transactionScopeFilter === 'organization' }"
+
             @click="transactionScopeFilter = 'organization'"
+
           >
+
             組織
+
           </button>
+
         </div>
+
       </div>
+
     </section>
 
     <section class="summary-grid">
+
       <div class="summary-card summary-card-1">
+
         <div class="summary-top">
+
           <span class="summary-label">TOTAL TRANSACTIONS</span>
+
           <span class="summary-index">TRX-01</span>
+
         </div>
 
         <strong>{{ transactions.length }}</strong>
 
         <span class="summary-sub">登録取引</span>
+
         <div class="summary-line"></div>
+
       </div>
 
       <div class="summary-card summary-card-2 income-card">
+
         <div class="summary-top">
+
           <span class="summary-label">TOTAL INCOME</span>
+
           <span class="summary-index">TRX-02</span>
+
         </div>
 
         <strong class="income-value">
+
           {{ formatAmount(totalIncome) }}
+
         </strong>
 
         <span class="summary-sub">収入総額</span>
 
         <div class="summary-line income-line"></div>
+
       </div>
 
       <div class="summary-card summary-card-3 expense-card">
+
         <div class="summary-top">
+
           <span class="summary-label">TOTAL EXPENSE</span>
+
           <span class="summary-index">TRX-03</span>
+
         </div>
 
         <strong class="expense-value">
+
           {{ formatAmount(totalExpense) }}
+
         </strong>
 
         <span class="summary-sub">支出総額</span>
 
         <div class="summary-line expense-line"></div>
+
       </div>
 
       <div class="summary-card summary-card-4">
+
         <div class="summary-top">
+
           <span class="summary-label">SEARCH RESULT</span>
+
           <span class="summary-index">TRX-04</span>
+
         </div>
 
         <strong>{{ filteredTransactions.length }}</strong>
@@ -161,659 +265,1125 @@
         <span class="summary-sub">表示中の取引</span>
 
         <div class="summary-line"></div>
+
       </div>
+
     </section>
 
     <section class="transactions-panel panel-enter panel-delay-2">
+
       <div class="panel-header">
+
         <div>
+
           <p class="panel-eyebrow">TRANSACTION DATABASE</p>
+
           <h2>取引一覧</h2>
+
         </div>
 
         <div class="result-meta">
+
           <span class="result-dot"></span>
+
           <span>
+
             {{ filteredTransactions.length }} TRANSACTIONS
+
           </span>
+
         </div>
+
       </div>
 
       <div
+
         v-if="isLoading"
+
         class="loading-state"
+
       >
+
         <div class="loading-core">
+
           <div class="loading-spinner"></div>
+
           <span></span>
+
         </div>
 
         <p>取引情報を取得しています...</p>
 
         <div class="loading-progress">
+
           <span></span>
+
         </div>
+
       </div>
 
       <div
+
         v-else-if="loadError"
+
         class="error-state"
+
       >
+
         <div class="error-frame">
+
           <div class="error-symbol">!</div>
+
         </div>
 
         <h3>データ取得エラー</h3>
+
         <p>{{ loadError }}</p>
 
         <button @click="fetchTransactions">
+
           再試行
+
         </button>
+
       </div>
 
       <div
+
         v-else-if="filteredTransactions.length === 0"
+
         class="empty-state"
+
       >
+
         <div class="empty-frame">
+
           <div class="empty-symbol">⌕</div>
+
         </div>
 
         <h3>該当取引なし</h3>
+
         <p>
+
           検索条件・フィルターに一致する取引がありません。
+
         </p>
+
       </div>
 
       <div
+
         v-else
+
         class="transaction-table"
+
       >
+
         <div class="table-header">
+
           <span>ID</span>
+
           <span>USER</span>
+
           <span>ORGANIZATION</span>
+
           <span>TYPE</span>
+
           <span>CATEGORY</span>
+
           <span>AMOUNT</span>
+
           <span>DATE</span>
+
           <span>操作</span>
+
         </div>
 
         <div
+
           v-for="(transaction, index) in filteredTransactions"
+
           :key="transaction.id"
+
           class="transaction-row"
+
           :class="{
+
             income: transaction.transaction_type === 'income',
+
             expense: transaction.transaction_type === 'expense'
+
           }"
+
           :style="{ '--row-delay': `${index * 35}ms` }"
+
         >
+
           <span class="row-scan"></span>
 
           <span class="transaction-id">
+
             #{{ transaction.id }}
+
           </span>
 
           <div class="user-profile">
+
             <div class="user-avatar">
+
               {{ getInitial(transaction.user?.username) }}
+
             </div>
 
             <div class="user-info">
+
               <strong>
+
                 {{ transaction.user?.username || '不明' }}
+
               </strong>
 
               <span>
+
                 {{ transaction.user?.public_id || 'ID不明' }}
+
               </span>
+
             </div>
+
           </div>
 
           <div class="organization-info">
+
             <strong>
+
               {{ transaction.organization?.name || '未設定' }}
+
             </strong>
 
             <span>
+
               {{ transaction.organization?.public_id || '-' }}
+
             </span>
+
           </div>
 
           <span
+
             class="type-badge"
+
             :class="{
+
               income: transaction.transaction_type === 'income',
+
               expense: transaction.transaction_type === 'expense'
+
             }"
+
           >
+
             <span class="type-dot"></span>
 
             {{ getTransactionTypeLabel(transaction.transaction_type) }}
+
           </span>
 
           <span class="category-value">
+
             {{ transaction.category }}
+
           </span>
 
           <span
+
             class="amount-value"
+
             :class="{
+
               income: transaction.transaction_type === 'income',
+
               expense: transaction.transaction_type === 'expense'
+
             }"
+
           >
+
             {{ transaction.transaction_type === 'income' ? '+' : '-' }}
+
             {{ formatAmount(transaction.amount) }}
+
           </span>
 
           <span class="date-value">
+
             {{ formatDate(transaction.date) }}
+
           </span>
 
           <div class="action-group">
+
             <button
+
               class="detail-button"
+
               @click="openTransactionDetail(transaction.id)"
+
             >
+
               <span>詳細</span>
+
               <i>→</i>
+
             </button>
+
           </div>
+
         </div>
+
       </div>
+
     </section>
 
     <Transition name="modal">
+
       <div
+
         v-if="showDetailModal"
+
         class="modal-overlay"
+
         @click.self="closeTransactionDetail"
+
       >
+
         <div class="modal-backdrop-grid"></div>
 
         <div class="detail-modal">
+
           <div class="modal-glow"></div>
 
           <div class="modal-corner top-left"></div>
+
           <div class="modal-corner top-right"></div>
+
           <div class="modal-corner bottom-left"></div>
+
           <div class="modal-corner bottom-right"></div>
 
           <div class="modal-header">
+
             <div>
+
               <p class="modal-eyebrow">TRANSACTION PROFILE</p>
+
               <h2>取引詳細</h2>
+
             </div>
 
             <button
+
               class="close-button"
+
               @click="closeTransactionDetail"
+
             >
+
               ×
+
             </button>
+
           </div>
 
           <div
+
             v-if="isLoadingDetail"
+
             class="modal-loading"
+
           >
+
             <div class="modal-loading-core">
+
               <div class="loading-spinner"></div>
+
             </div>
 
             <p>取引情報を取得しています...</p>
+
             <span>DATABASE QUERY / TRANSACTION</span>
+
           </div>
 
           <div
+
             v-else-if="selectedTransaction"
+
             class="modal-content"
+
           >
+
             <div class="transaction-hero">
+
               <div
+
                 class="hero-type"
+
                 :class="{
+
                   income:
+
                     selectedTransaction.transaction_type === 'income',
+
                   expense:
+
                     selectedTransaction.transaction_type === 'expense'
+
                 }"
+
               >
+
                 {{ selectedTransaction.transaction_type === 'income' ? '+' : '-' }}
+
               </div>
 
               <div class="hero-main">
+
                 <span class="hero-label">
+
                   {{
+
                     getTransactionTypeLabel(
+
                       selectedTransaction.transaction_type
+
                     )
+
                   }}
+
                 </span>
 
                 <strong
+
                   :class="{
+
                     'income-value':
+
                       selectedTransaction.transaction_type === 'income',
+
                     'expense-value':
+
                       selectedTransaction.transaction_type === 'expense'
+
                   }"
+
                 >
+
                   {{ selectedTransaction.transaction_type === 'income' ? '+' : '-' }}
+
                   {{ formatAmount(selectedTransaction.amount) }}
+
                 </strong>
+
               </div>
 
               <span
+
                 class="scope-badge"
+
                 :class="{
+
                   personal:
+
                     selectedTransaction.transaction_scope === 'personal',
+
                   organization:
+
                     selectedTransaction.transaction_scope === 'organization'
+
                 }"
+
               >
+
                 {{
+
                   getTransactionScopeLabel(
+
                     selectedTransaction.transaction_scope
+
                   )
+
                 }}
+
               </span>
+
             </div>
 
             <div class="detail-grid">
+
               <div class="detail-item">
+
                 <span>TRANSACTION ID</span>
+
                 <strong>
+
                   #{{ selectedTransaction.id }}
+
                 </strong>
+
               </div>
 
               <div class="detail-item">
+
                 <span>CATEGORY</span>
+
                 <strong>
+
                   {{ selectedTransaction.category }}
+
                 </strong>
+
               </div>
 
               <div class="detail-item">
+
                 <span>DATE</span>
+
                 <strong>
+
                   {{ formatDate(selectedTransaction.date) }}
+
                 </strong>
+
               </div>
 
               <div class="detail-item">
+
                 <span>PAYMENT METHOD</span>
+
                 <strong>
+
                   {{ selectedTransaction.payment_method || '-' }}
+
                 </strong>
+
               </div>
 
               <div class="detail-item">
+
                 <span>USER</span>
 
                 <strong>
+
                   {{ selectedTransaction.user?.username || '不明' }}
+
                 </strong>
 
                 <small>
+
                   {{ selectedTransaction.user?.public_id || '-' }}
+
                 </small>
+
               </div>
 
               <div class="detail-item">
+
                 <span>ORGANIZATION</span>
 
                 <strong>
+
                   {{ selectedTransaction.organization?.name || '未設定' }}
+
                 </strong>
 
                 <small>
+
                   {{ selectedTransaction.organization?.public_id || '-' }}
+
                 </small>
+
               </div>
 
               <div class="detail-item">
+
                 <span>ACCOUNT STATUS</span>
 
                 <strong
+
                   :class="{
+
                     'account-linked':
+
                       selectedTransaction.account_linked,
+
                     'account-none':
+
                       !selectedTransaction.account_linked
+
                   }"
+
                 >
+
                   {{
+
                     selectedTransaction.account_linked
+
                       ? '口座連携あり'
+
                       : '口座連携なし'
+
                   }}
+
                 </strong>
+
               </div>
 
               <div class="detail-item">
+
                 <span>TRANSACTION SCOPE</span>
 
                 <strong>
+
                   {{
+
                     getTransactionScopeLabel(
+
                       selectedTransaction.transaction_scope
+
                     )
+
                   }}
+
                 </strong>
+
               </div>
 
               <div
+
                 v-if="selectedTransaction.created_at"
+
                 class="detail-item"
+
               >
+
                 <span>CREATED AT</span>
 
                 <strong>
+
                   {{ formatDateTime(selectedTransaction.created_at) }}
+
                 </strong>
+
               </div>
 
               <div
+
                 v-if="selectedTransaction.updated_at"
+
                 class="detail-item"
+
               >
+
                 <span>UPDATED AT</span>
 
                 <strong>
+
                   {{ formatDateTime(selectedTransaction.updated_at) }}
+
                 </strong>
+
               </div>
+
             </div>
 
             <div class="privacy-notice">
+
               <span class="privacy-icon">i</span>
 
               <div>
+
                 <strong>金融情報は保護されています</strong>
 
                 <p>
+
                   銀行名・口座番号・カード情報などの金融情報は、管理画面では表示されません。
+
                 </p>
+
               </div>
+
             </div>
+
           </div>
 
           <div
+
             v-else
+
             class="error-state modal-error"
+
           >
+
             <div class="error-frame">
+
               <div class="error-symbol">!</div>
+
             </div>
 
             <h3>取引情報を取得できませんでした</h3>
+
             <p>もう一度詳細ボタンを押してください。</p>
+
           </div>
 
           <div class="modal-footer">
+
             <div class="modal-footer-status">
+
               <span></span>
+
               SECURE ADMIN ACCESS
+
             </div>
 
             <button
+
               class="modal-close-button"
+
               @click="closeTransactionDetail"
+
             >
+
               閉じる
+
             </button>
+
           </div>
+
         </div>
+
       </div>
+
     </Transition>
+
   </div>
+
 </template>
 
 <script setup lang="ts">
+
 definePageMeta({
+
   layout: 'admin'
+
 })
 
 interface TransactionUser {
+
   id: number
+
   username: string
+
   public_id: string
+
 }
 
 interface TransactionOrganization {
+
   id: number
+
   name: string
+
   public_id: string
+
 }
 
 interface Transaction {
+
   id: number
+
   transaction_type: 'income' | 'expense' | string
+
   transaction_scope: 'personal' | 'organization' | string
+
   category: string
+
   amount: number
+
   date: string
+
   payment_method: string | null
+
   account_linked: boolean
+
   user: TransactionUser | null
+
   organization: TransactionOrganization | null
+
   created_at?: string
+
   updated_at?: string
+
 }
 
 const { $api } = useNuxtApp()
 
 const transactions = ref<Transaction[]>([])
+
 const searchQuery = ref('')
+
 const transactionTypeFilter = ref<'all' | 'income' | 'expense'>('all')
+
 const transactionScopeFilter = ref<'all' | 'personal' | 'organization'>('all')
+
 const isLoading = ref(true)
+
 const loadError = ref('')
+
 const showDetailModal = ref(false)
+
 const isLoadingDetail = ref(false)
+
 const selectedTransaction = ref<Transaction | null>(null)
 
 const totalIncome = computed(() =>
+
   transactions.value
+
     .filter(
+
       transaction =>
+
         transaction.transaction_type === 'income'
+
     )
+
     .reduce(
+
       (total, transaction) =>
+
         total + Number(transaction.amount),
+
       0
+
     )
+
 )
 
 const totalExpense = computed(() =>
+
   transactions.value
+
     .filter(
+
       transaction =>
+
         transaction.transaction_type === 'expense'
+
     )
+
     .reduce(
+
       (total, transaction) =>
+
         total + Number(transaction.amount),
+
       0
+
     )
+
 )
 
 const filteredTransactions = computed(() => {
+
   const keyword = searchQuery.value
+
     .trim()
+
     .toLowerCase()
 
   return transactions.value.filter(transaction => {
+
     const matchesKeyword =
+
       !keyword ||
+
       String(transaction.id).includes(keyword) ||
+
       transaction.category?.toLowerCase().includes(keyword) ||
+
       transaction.user?.username?.toLowerCase().includes(keyword) ||
+
       transaction.user?.public_id?.toLowerCase().includes(keyword) ||
+
       transaction.organization?.name?.toLowerCase().includes(keyword) ||
+
       transaction.organization?.public_id?.toLowerCase().includes(keyword)
 
     const matchesType =
+
       transactionTypeFilter.value === 'all' ||
+
       transaction.transaction_type === transactionTypeFilter.value
 
     const matchesScope =
+
       transactionScopeFilter.value === 'all' ||
+
       transaction.transaction_scope === transactionScopeFilter.value
 
     return matchesKeyword && matchesType && matchesScope
+
   })
+
 })
 
 const fetchTransactions = async () => {
+
   isLoading.value = true
+
   loadError.value = ''
 
   try {
+
     const response =
+
       await $api.get<Transaction[]>(
+
         '/admin/transactions'
+
       )
 
     transactions.value =
+
       Array.isArray(response.data)
+
         ? response.data
+
         : []
+
   } catch (error: any) {
+
     console.error(
+
       '取引一覧の取得に失敗しました:',
+
       error
+
     )
 
     if (error?.response?.status === 403) {
+
       loadError.value =
+
         '管理者権限が必要です。'
+
     } else {
+
       loadError.value =
+
         '取引一覧の取得に失敗しました。'
+
     }
+
   } finally {
+
     isLoading.value = false
+
   }
+
 }
 
 const openTransactionDetail = async (
+
   transactionId: number
+
 ) => {
+
   showDetailModal.value = true
+
   isLoadingDetail.value = true
+
   selectedTransaction.value = null
 
   try {
+
     const response =
+
       await $api.get<Transaction>(
+
         `/admin/transactions/${transactionId}`
+
       )
 
     selectedTransaction.value =
+
       response.data
+
   } catch (error) {
+
     console.error(
+
       '取引詳細の取得に失敗しました:',
+
       error
+
     )
 
     selectedTransaction.value = null
+
   } finally {
+
     isLoadingDetail.value = false
+
   }
+
 }
 
 const closeTransactionDetail = () => {
+
   if (isLoadingDetail.value) {
+
     return
+
   }
 
   showDetailModal.value = false
+
   selectedTransaction.value = null
+
 }
 
 const getTransactionTypeLabel = (
+
   type: string
+
 ) => {
+
   if (type === 'income') {
+
     return '収入'
+
   }
 
   if (type === 'expense') {
+
     return '支出'
+
   }
 
   return type
+
 }
 
 const getTransactionScopeLabel = (
+
   scope: string
+
 ) => {
+
   if (scope === 'personal') {
+
     return '個人'
+
   }
 
   if (scope === 'organization') {
+
     return '組織'
+
   }
 
   return scope
+
 }
 
 const formatAmount = (
+
   amount: number
+
 ) => {
+
   return `¥${Number(amount).toLocaleString('ja-JP')}`
+
 }
 
 const formatDate = (
+
   date: string
+
 ) => {
+
   return new Date(date).toLocaleDateString(
+
     'ja-JP',
+
     {
+
       year: 'numeric',
+
       month: '2-digit',
+
       day: '2-digit'
+
     }
+
   )
+
 }
 
 const formatDateTime = (
+
   date: string
+
 ) => {
+
   return new Date(date).toLocaleString(
+
     'ja-JP',
+
     {
+
       year: 'numeric',
+
       month: '2-digit',
+
       day: '2-digit',
+
       hour: '2-digit',
+
       minute: '2-digit'
+
     }
+
   )
+
 }
 
 const getInitial = (
+
   value?: string | null
+
 ) => {
+
   return (
+
     value?.charAt(0)?.toUpperCase() ||
+
     '?'
+
   )
+
 }
 
 onMounted(() => {
+
   fetchTransactions()
+
 })
+
 </script>
 
 <style scoped>
@@ -827,31 +1397,16 @@ onMounted(() => {
   background:
     radial-gradient(
       circle at 82% 4%,
-      rgba(57, 216, 255, 0.07),
+      rgba(34, 184, 223, 0.08),
       transparent 26%
     ),
     radial-gradient(
       circle at 8% 92%,
-      rgba(59, 130, 246, 0.045),
+      rgba(49, 185, 133, 0.045),
       transparent 23%
     ),
-    linear-gradient(
-      rgba(0, 200, 255, 0.025) 1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      90deg,
-      rgba(0, 200, 255, 0.025) 1px,
-      transparent 1px
-    ),
-    #050a12;
-  background-size:
-    auto,
-    auto,
-    32px 32px,
-    32px 32px,
-    auto;
-  color: #e6f7ff;
+    #f4f9fc;
+  color: #17313d;
 }
 
 .ambient-grid {
@@ -859,27 +1414,25 @@ onMounted(() => {
   inset: 0;
   z-index: -3;
   pointer-events: none;
-  opacity: 0.2;
+  opacity: 0.8;
   background-image:
     linear-gradient(
-      rgba(57, 216, 255, 0.035) 1px,
+      rgba(34, 184, 223, 0.035) 1px,
       transparent 1px
     ),
     linear-gradient(
       90deg,
-      rgba(57, 216, 255, 0.035) 1px,
+      rgba(34, 184, 223, 0.035) 1px,
       transparent 1px
     );
   background-size: 56px 56px;
   mask-image:
     linear-gradient(
       to bottom,
-      black,
+      rgba(0, 0, 0, 0.75),
       transparent 92%
     );
-  animation:
-    grid-drift 18s
-    linear infinite;
+  animation: grid-drift 18s linear infinite;
 }
 
 .ambient-scan {
@@ -890,18 +1443,16 @@ onMounted(() => {
   height: 18%;
   z-index: -2;
   pointer-events: none;
-  opacity: 0.16;
+  opacity: 0.8;
   background:
     linear-gradient(
       to bottom,
       transparent,
-      rgba(57, 216, 255, 0.09),
+      rgba(34, 184, 223, 0.08),
       transparent
     );
   filter: blur(12px);
-  animation:
-    ambient-scan 10s
-    linear infinite;
+  animation: ambient-scan 10s linear infinite;
 }
 
 .page-heading,
@@ -925,7 +1476,7 @@ onMounted(() => {
 .panel-eyebrow,
 .modal-eyebrow {
   margin: 0 0 8px;
-  color: #39d8ff;
+  color: #22b8df;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.16em;
@@ -933,7 +1484,7 @@ onMounted(() => {
 
 .page-heading h1 {
   margin: 0;
-  color: #eefcff;
+  color: #17313d;
   font-size: 32px;
   font-weight: 800;
   letter-spacing: 0.03em;
@@ -941,7 +1492,7 @@ onMounted(() => {
 
 .description {
   margin: 8px 0 0;
-  color: #7e98a8;
+  color: #6d8792;
   font-size: 13px;
 }
 
@@ -952,9 +1503,9 @@ onMounted(() => {
   gap: 7px;
   height: 40px;
   padding: 0 15px;
-  border: 1px solid #214457;
-  background: rgba(8, 22, 34, 0.8);
-  color: #8de8ff;
+  border: 1px solid #bcd8e2;
+  background: #ffffff;
+  color: #1598bc;
   font-size: 11px;
   font-weight: 800;
   cursor: pointer;
@@ -977,7 +1528,7 @@ onMounted(() => {
     linear-gradient(
       90deg,
       transparent,
-      #39d8ff,
+      #22b8df,
       transparent
     );
   opacity: 0;
@@ -985,18 +1536,16 @@ onMounted(() => {
 
 .refresh-button:hover:not(:disabled) {
   transform: translateY(-2px);
-  border-color: #39d8ff;
-  background: rgba(10, 34, 48, 0.9);
+  border-color: #22b8df;
+  background: #f8fdff;
   box-shadow:
-    0 0 20px
-    rgba(57, 216, 255, 0.06);
+    0 8px 22px rgba(34, 184, 223, 0.1),
+    0 0 0 3px rgba(34, 184, 223, 0.035);
 }
 
 .refresh-button:hover:not(:disabled)::after {
   opacity: 1;
-  animation:
-    button-scan 0.8s
-    ease-out;
+  animation: button-scan 0.8s ease-out;
 }
 
 .refresh-button:disabled {
@@ -1011,26 +1560,22 @@ onMounted(() => {
 }
 
 .refresh-icon.spinning {
-  animation:
-    spin 0.8s
-    linear infinite;
+  animation: spin 0.8s linear infinite;
 }
 
 .control-panel,
 .transactions-panel,
 .summary-card {
-  border: 1px solid #193444;
+  border: 1px solid #cfe2e9;
   background:
     linear-gradient(
       145deg,
-      rgba(7, 19, 29, 0.94),
-      rgba(4, 12, 19, 0.94)
+      rgba(255, 255, 255, 0.97),
+      rgba(248, 252, 253, 0.94)
     );
   box-shadow:
-    inset 0 0 30px
-    rgba(0, 150, 220, 0.025),
-    0 12px 35px
-    rgba(0, 0, 0, 0.1);
+    inset 0 0 30px rgba(34, 184, 223, 0.018),
+    0 12px 35px rgba(47, 88, 106, 0.065);
 }
 
 .control-panel {
@@ -1045,36 +1590,36 @@ onMounted(() => {
   position: absolute;
   width: 12px;
   height: 12px;
-  border-color: rgba(57, 216, 255, 0.3);
+  border-color: rgba(34, 184, 223, 0.35);
   pointer-events: none;
 }
 
 .panel-corner.top-left {
   left: 8px;
   top: 8px;
-  border-left: 1px solid;
   border-top: 1px solid;
+  border-left: 1px solid;
 }
 
 .panel-corner.top-right {
   right: 8px;
   top: 8px;
-  border-right: 1px solid;
   border-top: 1px solid;
+  border-right: 1px solid;
 }
 
 .panel-corner.bottom-left {
   left: 8px;
   bottom: 8px;
-  border-left: 1px solid;
   border-bottom: 1px solid;
+  border-left: 1px solid;
 }
 
 .panel-corner.bottom-right {
   right: 8px;
   bottom: 8px;
-  border-right: 1px solid;
   border-bottom: 1px solid;
+  border-right: 1px solid;
 }
 
 .search-box {
@@ -1084,8 +1629,8 @@ onMounted(() => {
   width: 100%;
   height: 42px;
   padding: 0 13px;
-  border: 1px solid #1f4355;
-  background: #07121c;
+  border: 1px solid #c7dfe7;
+  background: #fafdfe;
   box-sizing: border-box;
   overflow: hidden;
   transition:
@@ -1094,12 +1639,10 @@ onMounted(() => {
 }
 
 .search-box:focus-within {
-  border-color: rgba(57, 216, 255, 0.5);
+  border-color: rgba(34, 184, 223, 0.6);
   box-shadow:
-    0 0 0 3px
-    rgba(57, 216, 255, 0.035),
-    inset 0 0 20px
-    rgba(57, 216, 255, 0.025);
+    0 0 0 3px rgba(34, 184, 223, 0.06),
+    inset 0 0 20px rgba(34, 184, 223, 0.025);
 }
 
 .search-pulse {
@@ -1108,18 +1651,14 @@ onMounted(() => {
   flex-shrink: 0;
   margin-right: 8px;
   border-radius: 50%;
-  background: #39d8ff;
-  box-shadow:
-    0 0 8px
-    rgba(57, 216, 255, 0.7);
-  animation:
-    status-pulse 1.8s
-    ease-in-out infinite;
+  background: #22b8df;
+  box-shadow: 0 0 8px rgba(34, 184, 223, 0.55);
+  animation: status-pulse 1.8s ease-in-out infinite;
 }
 
 .search-icon {
   margin-right: 9px;
-  color: #39d8ff;
+  color: #22b8df;
   font-size: 18px;
 }
 
@@ -1128,17 +1667,17 @@ onMounted(() => {
   border: 0;
   outline: none;
   background: transparent;
-  color: #e6f7ff;
+  color: #17313d;
   font-size: 12px;
 }
 
 .search-box input::placeholder {
-  color: #58717f;
+  color: #8aa2ac;
 }
 
 .search-label {
   margin-left: 10px;
-  color: #365a67;
+  color: #9eb5bd;
   font-size: 8px;
   font-weight: 800;
   letter-spacing: 0.12em;
@@ -1160,7 +1699,7 @@ onMounted(() => {
 
 .filter-label {
   margin-right: 4px;
-  color: #4f707d;
+  color: #6d8792;
   font-size: 8px;
   font-weight: 800;
   letter-spacing: 0.12em;
@@ -1172,9 +1711,9 @@ onMounted(() => {
   gap: 5px;
   height: 28px;
   padding: 0 11px;
-  border: 1px solid #254654;
+  border: 1px solid #c7dbe2;
   background: transparent;
-  color: #7896a1;
+  color: #6f8994;
   font-size: 9px;
   font-weight: 800;
   cursor: pointer;
@@ -1187,17 +1726,17 @@ onMounted(() => {
 
 .filter-button:hover {
   transform: translateY(-1px);
-  border-color: #427183;
-  color: #b7dce6;
+  border-color: #87b8c7;
+  color: #2f6474;
+  background: #f8fcfd;
 }
 
 .filter-button.active {
-  border-color: #39d8ff;
-  background: rgba(57, 216, 255, 0.07);
-  color: #7de7ff;
+  border-color: #22b8df;
+  background: #eaf9fd;
+  color: #1597bb;
   box-shadow:
-    inset 0 0 10px
-    rgba(57, 216, 255, 0.025);
+    inset 0 0 10px rgba(34, 184, 223, 0.025);
 }
 
 .filter-button.income-filter span,
@@ -1208,29 +1747,27 @@ onMounted(() => {
 }
 
 .filter-button.income-filter span {
-  background: #79eabc;
+  background: #31b985;
   box-shadow:
-    0 0 6px
-    rgba(121, 234, 188, 0.65);
+    0 0 6px rgba(49, 185, 133, 0.45);
 }
 
 .filter-button.expense-filter span {
-  background: #ff9987;
+  background: #e56557;
   box-shadow:
-    0 0 6px
-    rgba(255, 153, 135, 0.65);
+    0 0 6px rgba(229, 101, 87, 0.4);
 }
 
 .filter-button.income-filter.active {
-  border-color: #3e9976;
-  background: rgba(52, 211, 153, 0.07);
-  color: #7ff0c0;
+  border-color: #8bcdb4;
+  background: #f1fbf7;
+  color: #258f6d;
 }
 
 .filter-button.expense-filter.active {
-  border-color: #8b4b43;
-  background: rgba(255, 92, 72, 0.07);
-  color: #ff9a88;
+  border-color: #e2a39b;
+  background: #fff7f5;
+  color: #ca594d;
 }
 
 .summary-grid {
@@ -1273,20 +1810,18 @@ onMounted(() => {
 
 .summary-card:hover {
   transform: translateY(-3px);
-  border-color: rgba(57, 216, 255, 0.24);
+  border-color: rgba(34, 184, 223, 0.3);
   box-shadow:
-    inset 0 0 30px
-    rgba(0, 150, 220, 0.03),
-    0 12px 28px
-    rgba(0, 0, 0, 0.16);
+    inset 0 0 30px rgba(34, 184, 223, 0.025),
+    0 12px 28px rgba(47, 88, 106, 0.1);
 }
 
 .summary-card.income-card:hover {
-  border-color: rgba(121, 234, 188, 0.24);
+  border-color: rgba(49, 185, 133, 0.28);
 }
 
 .summary-card.expense-card:hover {
-  border-color: rgba(255, 153, 135, 0.24);
+  border-color: rgba(229, 101, 87, 0.28);
 }
 
 .summary-card::before {
@@ -1296,18 +1831,21 @@ onMounted(() => {
   width: 28%;
   height: 1px;
   content: "";
-  background: #39d8ff;
+  background: #22b8df;
   box-shadow:
-    0 0 10px
-    rgba(57, 216, 255, 0.4);
+    0 0 10px rgba(34, 184, 223, 0.3);
 }
 
 .income-card::before {
-  background: #79eabc;
+  background: #31b985;
+  box-shadow:
+    0 0 10px rgba(49, 185, 133, 0.25);
 }
 
 .expense-card::before {
-  background: #ff9987;
+  background: #e56557;
+  box-shadow:
+    0 0 10px rgba(229, 101, 87, 0.22);
 }
 
 .summary-top {
@@ -1319,14 +1857,14 @@ onMounted(() => {
 
 .summary-label {
   display: block;
-  color: #557481;
+  color: #6d8792;
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.14em;
 }
 
 .summary-index {
-  color: #2e515f;
+  color: #9db7c1;
   font-size: 8px;
   font-weight: 800;
   letter-spacing: 0.1em;
@@ -1335,7 +1873,7 @@ onMounted(() => {
 .summary-card strong {
   display: block;
   margin-top: 7px;
-  color: #ebfbff;
+  color: #17313d;
   font-size: 25px;
   font-weight: 800;
   word-break: break-word;
@@ -1345,16 +1883,16 @@ onMounted(() => {
 .summary-sub {
   display: block;
   margin-top: 3px;
-  color: #6f8792;
+  color: #6d8792;
   font-size: 10px;
 }
 
 .income-value {
-  color: #7ff0c0 !important;
+  color: #299f77 !important;
 }
 
 .expense-value {
-  color: #ff9a88 !important;
+  color: #d45d50 !important;
 }
 
 .summary-line {
@@ -1366,7 +1904,7 @@ onMounted(() => {
   background:
     linear-gradient(
       90deg,
-      rgba(57, 216, 255, 0.7),
+      rgba(34, 184, 223, 0.65),
       transparent
     );
   animation:
@@ -1378,7 +1916,7 @@ onMounted(() => {
   background:
     linear-gradient(
       90deg,
-      rgba(121, 234, 188, 0.7),
+      rgba(49, 185, 133, 0.65),
       transparent
     );
 }
@@ -1387,7 +1925,7 @@ onMounted(() => {
   background:
     linear-gradient(
       90deg,
-      rgba(255, 153, 135, 0.7),
+      rgba(229, 101, 87, 0.6),
       transparent
     );
 }
@@ -1408,7 +1946,7 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 18px 20px;
-  border-bottom: 1px solid #173443;
+  border-bottom: 1px solid #d6e6eb;
   overflow: hidden;
 }
 
@@ -1423,7 +1961,7 @@ onMounted(() => {
     linear-gradient(
       90deg,
       transparent,
-      rgba(57, 216, 255, 0.5),
+      rgba(34, 184, 223, 0.55),
       transparent
     );
   animation:
@@ -1433,7 +1971,7 @@ onMounted(() => {
 
 .panel-header h2 {
   margin: 0;
-  color: #eaf9fd;
+  color: #17313d;
   font-size: 18px;
   font-weight: 800;
 }
@@ -1442,7 +1980,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 7px;
-  color: #50717f;
+  color: #6d8792;
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.12em;
@@ -1452,10 +1990,9 @@ onMounted(() => {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #39d8ff;
+  background: #22b8df;
   box-shadow:
-    0 0 8px
-    rgba(57, 216, 255, 0.65);
+    0 0 8px rgba(34, 184, 223, 0.5);
   animation:
     status-pulse 1.8s
     ease-in-out infinite;
@@ -1485,9 +2022,9 @@ onMounted(() => {
 }
 
 .table-header {
-  border-bottom: 1px solid #102b39;
-  background: #07131d;
-  color: #54717e;
+  border-bottom: 1px solid #dce9ed;
+  background: #f6fbfd;
+  color: #6a8590;
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.12em;
@@ -1496,7 +2033,7 @@ onMounted(() => {
 .transaction-row {
   position: relative;
   min-height: 76px;
-  border-bottom: 1px solid #102733;
+  border-bottom: 1px solid #e1edf1;
   overflow: hidden;
   animation:
     row-enter 0.45s
@@ -1512,15 +2049,15 @@ onMounted(() => {
 }
 
 .transaction-row:hover {
-  background: rgba(21, 48, 62, 0.23);
+  background: #f8fcfd;
 }
 
 .transaction-row.income:hover {
   background:
     linear-gradient(
       90deg,
-      rgba(52, 211, 153, 0.035),
-      rgba(21, 48, 62, 0.18)
+      rgba(49, 185, 133, 0.045),
+      #f8fcfd
     );
 }
 
@@ -1528,8 +2065,8 @@ onMounted(() => {
   background:
     linear-gradient(
       90deg,
-      rgba(255, 92, 72, 0.035),
-      rgba(21, 48, 62, 0.18)
+      rgba(229, 101, 87, 0.04),
+      #f8fcfd
     );
 }
 
@@ -1540,25 +2077,22 @@ onMounted(() => {
   width: 2px;
   height: 0;
   content: "";
-  background: #39d8ff;
+  background: #22b8df;
   box-shadow:
-    0 0 9px
-    rgba(57, 216, 255, 0.5);
+    0 0 9px rgba(34, 184, 223, 0.3);
   transition: height 0.25s ease;
 }
 
 .transaction-row.income::before {
-  background: #79eabc;
+  background: #31b985;
   box-shadow:
-    0 0 9px
-    rgba(121, 234, 188, 0.45);
+    0 0 9px rgba(49, 185, 133, 0.28);
 }
 
 .transaction-row.expense::before {
-  background: #ff9987;
+  background: #e56557;
   box-shadow:
-    0 0 9px
-    rgba(255, 153, 135, 0.45);
+    0 0 9px rgba(229, 101, 87, 0.25);
 }
 
 .transaction-row:hover::before {
@@ -1575,7 +2109,7 @@ onMounted(() => {
     linear-gradient(
       90deg,
       transparent,
-      rgba(57, 216, 255, 0.4),
+      rgba(34, 184, 223, 0.4),
       transparent
     );
   opacity: 0;
@@ -1587,7 +2121,7 @@ onMounted(() => {
     linear-gradient(
       90deg,
       transparent,
-      rgba(121, 234, 188, 0.4),
+      rgba(49, 185, 133, 0.4),
       transparent
     );
 }
@@ -1597,7 +2131,7 @@ onMounted(() => {
     linear-gradient(
       90deg,
       transparent,
-      rgba(255, 153, 135, 0.4),
+      rgba(229, 101, 87, 0.4),
       transparent
     );
 }
@@ -1610,7 +2144,7 @@ onMounted(() => {
 }
 
 .transaction-id {
-  color: #63818e;
+  color: #78919b;
   font-size: 10px;
   font-weight: 700;
 }
@@ -1630,16 +2164,16 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  border: 1px solid #23556a;
+  border: 1px solid #bfe0e8;
   border-radius: 8px;
   background:
     linear-gradient(
       145deg,
-      rgba(57, 216, 255, 0.07),
-      rgba(9, 26, 37, 0.9)
+      rgba(34, 184, 223, 0.1),
+      rgba(240, 250, 253, 0.95)
     ),
-    #091a25;
-  color: #55dcff;
+    #ffffff;
+  color: #1599bd;
   font-size: 10px;
   font-weight: 800;
   overflow: hidden;
@@ -1656,7 +2190,7 @@ onMounted(() => {
     linear-gradient(
       90deg,
       transparent,
-      rgba(57, 216, 255, 0.65),
+      rgba(34, 184, 223, 0.65),
       transparent
     );
 }
@@ -1676,7 +2210,7 @@ onMounted(() => {
 .organization-info strong {
   display: block;
   overflow: hidden;
-  color: #dff8ff;
+  color: #31525e;
   font-size: 10px;
   font-weight: 800;
   text-overflow: ellipsis;
@@ -1688,7 +2222,7 @@ onMounted(() => {
   display: block;
   margin-top: 3px;
   overflow: hidden;
-  color: #52707d;
+  color: #8299a2;
   font-size: 8px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1704,7 +2238,7 @@ onMounted(() => {
   min-width: 42px;
   height: 23px;
   padding: 0 8px;
-  border: 1px solid #35515d;
+  border: 1px solid #c7dbe2;
   font-size: 8px;
   font-weight: 800;
 }
@@ -1715,28 +2249,27 @@ onMounted(() => {
   border-radius: 50%;
   background: currentColor;
   box-shadow:
-    0 0 7px
-    currentColor;
+    0 0 7px currentColor;
   animation:
     status-pulse 1.8s
     ease-in-out infinite;
 }
 
 .type-badge.income {
-  border-color: #3c866b;
-  background: rgba(52, 211, 153, 0.05);
-  color: #79eabc;
+  border-color: #a8d7c5;
+  background: #f1fbf7;
+  color: #299f77;
 }
 
 .type-badge.expense {
-  border-color: #75483f;
-  background: rgba(255, 92, 72, 0.05);
-  color: #ff9987;
+  border-color: #e1b8b1;
+  background: #fff8f7;
+  color: #d45d50;
 }
 
 .category-value {
   overflow: hidden;
-  color: #adc8d2;
+  color: #56727d;
   font-size: 10px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1749,21 +2282,15 @@ onMounted(() => {
 }
 
 .amount-value.income {
-  color: #79eabc;
-  text-shadow:
-    0 0 7px
-    rgba(121, 234, 188, 0.25);
+  color: #299f77;
 }
 
 .amount-value.expense {
-  color: #ff9987;
-  text-shadow:
-    0 0 7px
-    rgba(255, 153, 135, 0.2);
+  color: #d45d50;
 }
 
 .date-value {
-  color: #748f9a;
+  color: #78919b;
   font-size: 9px;
 }
 
@@ -1778,9 +2305,9 @@ onMounted(() => {
   gap: 5px;
   height: 29px;
   padding: 0 10px;
-  border: 1px solid #34515d;
+  border: 1px solid #bfd6de;
   background: transparent;
-  color: #93b5c1;
+  color: #577580;
   font-size: 9px;
   font-weight: 800;
   cursor: pointer;
@@ -1793,14 +2320,14 @@ onMounted(() => {
 
 .detail-button:hover {
   transform: translateY(-1px);
-  border-color: #39d8ff;
-  background: rgba(57, 216, 255, 0.035);
-  color: #cbeef7;
+  border-color: #22b8df;
+  background: #f5fcfe;
+  color: #1597bb;
 }
 
 .detail-button i {
   font-style: normal;
-  color: #4d7380;
+  color: #86a2ac;
   transition:
     transform 0.2s ease,
     color 0.2s ease;
@@ -1808,8 +2335,12 @@ onMounted(() => {
 
 .detail-button:hover i {
   transform: translateX(3px);
-  color: #39d8ff;
+  color: #22b8df;
 }
+
+/* =========================
+   Loading / Empty / Error
+   ========================= */
 
 .loading-state,
 .error-state,
@@ -1827,7 +2358,7 @@ onMounted(() => {
 .error-state p,
 .empty-state p {
   margin: 12px 0 0;
-  color: #637d89;
+  color: #6e8791;
   font-size: 11px;
 }
 
@@ -1838,7 +2369,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(57, 216, 255, 0.16);
+  border: 1px solid rgba(34, 184, 223, 0.18);
   border-radius: 50%;
 }
 
@@ -1847,13 +2378,24 @@ onMounted(() => {
   position: absolute;
   inset: 5px;
   content: "";
-  border: 1px solid rgba(57, 216, 255, 0.09);
+  border: 1px solid rgba(34, 184, 223, 0.1);
   border-radius: 50%;
 }
 
 .loading-core::after {
   inset: 12px;
-  border-color: rgba(57, 216, 255, 0.2);
+  border-color: rgba(34, 184, 223, 0.2);
+}
+
+.loading-spinner {
+  width: 28px;
+  height: 28px;
+  border: 2px solid #d5e7ec;
+  border-top-color: #22b8df;
+  border-radius: 50%;
+  animation:
+    spin 0.8s
+    linear infinite;
 }
 
 .loading-core > span {
@@ -1861,24 +2403,12 @@ onMounted(() => {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #39d8ff;
+  background: #22b8df;
   box-shadow:
-    0 0 9px
-    rgba(57, 216, 255, 0.8);
+    0 0 9px rgba(34, 184, 223, 0.55);
   animation:
     status-pulse 1.2s
     ease-in-out infinite;
-}
-
-.loading-spinner {
-  width: 28px;
-  height: 28px;
-  border: 2px solid #1d3a48;
-  border-top-color: #39d8ff;
-  border-radius: 50%;
-  animation:
-    spin 0.8s
-    linear infinite;
 }
 
 .loading-progress {
@@ -1887,7 +2417,7 @@ onMounted(() => {
   height: 1px;
   margin-top: 20px;
   overflow: hidden;
-  background: #16313e;
+  background: #dbeaf0;
 }
 
 .loading-progress span {
@@ -1900,7 +2430,7 @@ onMounted(() => {
     linear-gradient(
       90deg,
       transparent,
-      #39d8ff,
+      #22b8df,
       transparent
     );
   animation:
@@ -1916,7 +2446,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid #68423c;
+  border: 1px solid #e2bdb7;
 }
 
 .error-frame::before,
@@ -1927,27 +2457,26 @@ onMounted(() => {
   width: 8px;
   height: 8px;
   content: "";
-  border-color: rgba(255, 139, 120, 0.5);
 }
 
 .error-frame::before,
 .empty-frame::before {
   left: -1px;
   top: -1px;
-  border-top: 1px solid;
-  border-left: 1px solid;
+  border-top: 1px solid rgba(229, 101, 87, 0.5);
+  border-left: 1px solid rgba(229, 101, 87, 0.5);
 }
 
 .error-frame::after,
 .empty-frame::after {
   right: -1px;
   bottom: -1px;
-  border-right: 1px solid;
-  border-bottom: 1px solid;
+  border-right: 1px solid rgba(229, 101, 87, 0.5);
+  border-bottom: 1px solid rgba(229, 101, 87, 0.5);
 }
 
 .empty-frame {
-  border-color: #2b4c5b;
+  border-color: #c7dfe7;
 }
 
 .error-symbol,
@@ -1955,18 +2484,18 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ff8b78;
+  color: #e56557;
   font-size: 22px;
 }
 
 .empty-symbol {
-  color: #59cfe8;
+  color: #22b8df;
 }
 
 .error-state h3,
 .empty-state h3 {
   margin: 14px 0 0;
-  color: #dcecf2;
+  color: #31525e;
   font-size: 14px;
 }
 
@@ -1974,9 +2503,9 @@ onMounted(() => {
   margin-top: 14px;
   height: 34px;
   padding: 0 14px;
-  border: 1px solid #3b6473;
+  border: 1px solid #bfd6de;
   background: transparent;
-  color: #9edcea;
+  color: #577580;
   cursor: pointer;
   transition:
     border-color 0.2s ease,
@@ -1985,10 +2514,14 @@ onMounted(() => {
 }
 
 .error-state button:hover {
-  border-color: #39d8ff;
-  background: rgba(57, 216, 255, 0.035);
-  color: #39d8ff;
+  border-color: #22b8df;
+  color: #1597bb;
+  background: #f5fcfe;
 }
+
+/* =========================
+   Modal
+   ========================= */
 
 .modal-enter-active,
 .modal-leave-active {
@@ -2026,23 +2559,23 @@ onMounted(() => {
   justify-content: center;
   padding: 20px;
   overflow: hidden;
-  background: rgba(1, 6, 11, 0.82);
-  backdrop-filter: blur(6px);
+  background: rgba(23, 49, 61, 0.3);
+  backdrop-filter: blur(7px);
 }
 
 .modal-backdrop-grid {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.13;
+  opacity: 0.7;
   background-image:
     linear-gradient(
-      rgba(57, 216, 255, 0.03) 1px,
+      rgba(34, 184, 223, 0.035) 1px,
       transparent 1px
     ),
     linear-gradient(
       90deg,
-      rgba(57, 216, 255, 0.03) 1px,
+      rgba(34, 184, 223, 0.035) 1px,
       transparent 1px
     );
   background-size: 32px 32px;
@@ -2056,21 +2589,18 @@ onMounted(() => {
   width: min(100%, 760px);
   max-height: 90vh;
   overflow-y: auto;
-  border: 1px solid #235064;
+  border: 1px solid #b9dce7;
   background:
     radial-gradient(
       circle at 50% 0%,
-      rgba(57, 216, 255, 0.035),
+      rgba(34, 184, 223, 0.05),
       transparent 35%
     ),
-    #06111a;
+    #ffffff;
   box-shadow:
-    0 0 0 1px
-    rgba(57, 216, 255, 0.04),
-    0 24px 100px
-    rgba(0, 0, 0, 0.55),
-    0 0 45px
-    rgba(57, 216, 255, 0.035);
+    0 0 0 1px rgba(34, 184, 223, 0.04),
+    0 24px 80px rgba(32, 76, 94, 0.2),
+    0 0 45px rgba(34, 184, 223, 0.06);
 }
 
 .modal-glow {
@@ -2081,7 +2611,7 @@ onMounted(() => {
   height: 240px;
   transform: translateX(-50%);
   border-radius: 50%;
-  background: rgba(57, 216, 255, 0.035);
+  background: rgba(34, 184, 223, 0.06);
   filter: blur(40px);
   pointer-events: none;
 }
@@ -2091,7 +2621,7 @@ onMounted(() => {
   z-index: 4;
   width: 14px;
   height: 14px;
-  border-color: rgba(57, 216, 255, 0.35);
+  border-color: rgba(34, 184, 223, 0.45);
   pointer-events: none;
 }
 
@@ -2130,12 +2660,12 @@ onMounted(() => {
   align-items: flex-start;
   justify-content: space-between;
   padding: 20px 22px;
-  border-bottom: 1px solid #173443;
+  border-bottom: 1px solid #d5e6eb;
 }
 
 .modal-header h2 {
   margin: 0;
-  color: #edfaff;
+  color: #17313d;
   font-size: 20px;
   font-weight: 800;
 }
@@ -2143,23 +2673,23 @@ onMounted(() => {
 .close-button {
   width: 32px;
   height: 32px;
-  border: 1px solid #284553;
-  background: transparent;
-  color: #83a3af;
+  border: 1px solid #bfd6de;
+  background: #ffffff;
+  color: #738c96;
   font-size: 20px;
   cursor: pointer;
   transition:
-    transform 0.2s ease,
     border-color 0.2s ease,
     color 0.2s ease,
-    background 0.2s ease;
+    background 0.2s ease,
+    transform 0.2s ease;
 }
 
 .close-button:hover {
   transform: rotate(90deg);
-  border-color: #39d8ff;
-  background: rgba(57, 216, 255, 0.035);
-  color: #39d8ff;
+  border-color: #22b8df;
+  background: #f5fcfe;
+  color: #22b8df;
 }
 
 .modal-loading {
@@ -2178,16 +2708,15 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(57, 216, 255, 0.17);
+  border: 1px solid rgba(34, 184, 223, 0.18);
   border-radius: 50%;
   box-shadow:
-    inset 0 0 20px
-    rgba(57, 216, 255, 0.03);
+    inset 0 0 20px rgba(34, 184, 223, 0.03);
 }
 
 .modal-loading > span {
   margin-top: 8px;
-  color: #3d5b67;
+  color: #8aa1aa;
   font-size: 8px;
   font-weight: 800;
   letter-spacing: 0.12em;
@@ -2205,14 +2734,14 @@ onMounted(() => {
   align-items: center;
   gap: 14px;
   padding: 16px;
-  border: 1px solid #183a48;
+  border: 1px solid #cfe3e9;
   background:
     linear-gradient(
       135deg,
-      rgba(57, 216, 255, 0.04),
-      rgba(8, 23, 34, 0.9)
+      rgba(34, 184, 223, 0.05),
+      rgba(248, 252, 253, 0.96)
     ),
-    #081722;
+    #ffffff;
   overflow: hidden;
 }
 
@@ -2227,7 +2756,7 @@ onMounted(() => {
     linear-gradient(
       90deg,
       transparent,
-      rgba(57, 216, 255, 0.5),
+      rgba(34, 184, 223, 0.5),
       transparent
     );
   animation:
@@ -2242,27 +2771,25 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid #355460;
+  border: 1px solid #c8dce3;
   font-size: 24px;
   font-weight: 800;
 }
 
 .hero-type.income {
-  border-color: #3c866b;
-  color: #79eabc;
-  background: rgba(52, 211, 153, 0.025);
+  border-color: #a8d7c5;
+  color: #299f77;
+  background: #f1fbf7;
   box-shadow:
-    0 0 20px
-    rgba(121, 234, 188, 0.025);
+    0 0 20px rgba(49, 185, 133, 0.035);
 }
 
 .hero-type.expense {
-  border-color: #75483f;
-  color: #ff9987;
-  background: rgba(255, 92, 72, 0.025);
+  border-color: #e1b8b1;
+  color: #d45d50;
+  background: #fff8f7;
   box-shadow:
-    0 0 20px
-    rgba(255, 153, 135, 0.025);
+    0 0 20px rgba(229, 101, 87, 0.035);
 }
 
 .hero-main {
@@ -2272,7 +2799,7 @@ onMounted(() => {
 
 .hero-label {
   display: block;
-  color: #607e89;
+  color: #718a94;
   font-size: 8px;
   font-weight: 800;
   letter-spacing: 0.12em;
@@ -2287,15 +2814,15 @@ onMounted(() => {
 }
 
 .scope-badge.personal {
-  border-color: #345e6d;
-  background: rgba(57, 216, 255, 0.04);
-  color: #8adff2;
+  border-color: #b9dce6;
+  background: #f2fbfd;
+  color: #198fae;
 }
 
 .scope-badge.organization {
-  border-color: #3c8069;
-  background: rgba(52, 211, 153, 0.04);
-  color: #79eabc;
+  border-color: #b8dacd;
+  background: #f1fbf7;
+  color: #299f77;
 }
 
 .detail-grid {
@@ -2309,8 +2836,8 @@ onMounted(() => {
 .detail-item {
   position: relative;
   padding: 13px;
-  border: 1px solid #163440;
-  background: #07131d;
+  border: 1px solid #d5e5ea;
+  background: #fafdfe;
   overflow: hidden;
 }
 
@@ -2324,14 +2851,14 @@ onMounted(() => {
   background:
     linear-gradient(
       90deg,
-      rgba(57, 216, 255, 0.35),
+      rgba(34, 184, 223, 0.35),
       transparent
     );
 }
 
 .detail-item span {
   display: block;
-  color: #52707d;
+  color: #718a94;
   font-size: 8px;
   font-weight: 800;
   letter-spacing: 0.12em;
@@ -2340,7 +2867,7 @@ onMounted(() => {
 .detail-item strong {
   display: block;
   margin-top: 5px;
-  color: #d8f5fc;
+  color: #31525e;
   font-size: 11px;
   font-weight: 800;
   word-break: break-word;
@@ -2349,16 +2876,17 @@ onMounted(() => {
 .detail-item small {
   display: block;
   margin-top: 4px;
-  color: #506d79;
+  color: #7c969f;
   font-size: 8px;
+  word-break: break-word;
 }
 
 .account-linked {
-  color: #79eabc !important;
+  color: #299f77 !important;
 }
 
 .account-none {
-  color: #758c96 !important;
+  color: #8399a2 !important;
 }
 
 .privacy-notice {
@@ -2367,12 +2895,12 @@ onMounted(() => {
   gap: 10px;
   margin-top: 14px;
   padding: 12px;
-  border: 1px solid #284454;
+  border: 1px solid #cfe1e7;
   background:
     linear-gradient(
       135deg,
-      rgba(13, 32, 43, 0.72),
-      rgba(8, 20, 29, 0.72)
+      #f4fbfd,
+      #fbfdfe
     );
 }
 
@@ -2383,22 +2911,22 @@ onMounted(() => {
   width: 22px;
   height: 22px;
   flex-shrink: 0;
-  border: 1px solid #3a7184;
-  color: #73d7ec;
+  border: 1px solid #a9cfda;
+  color: #2296b3;
   font-size: 10px;
   font-weight: 800;
 }
 
 .privacy-notice strong {
   display: block;
-  color: #a9d5df;
+  color: #3b5b67;
   font-size: 9px;
   font-weight: 800;
 }
 
 .privacy-notice p {
   margin: 4px 0 0;
-  color: #5d7782;
+  color: #708993;
   font-size: 9px;
   line-height: 1.5;
 }
@@ -2415,14 +2943,14 @@ onMounted(() => {
   justify-content: space-between;
   gap: 12px;
   padding: 16px 22px 20px;
-  border-top: 1px solid #173443;
+  border-top: 1px solid #d5e6eb;
 }
 
 .modal-footer-status {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #466672;
+  color: #728b95;
   font-size: 8px;
   font-weight: 800;
   letter-spacing: 0.1em;
@@ -2432,10 +2960,9 @@ onMounted(() => {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #39d8ff;
+  background: #22b8df;
   box-shadow:
-    0 0 7px
-    rgba(57, 216, 255, 0.7);
+    0 0 7px rgba(34, 184, 223, 0.5);
   animation:
     status-pulse 1.5s
     ease-in-out infinite;
@@ -2444,9 +2971,9 @@ onMounted(() => {
 .modal-close-button {
   height: 36px;
   min-width: 90px;
-  border: 1px solid #315566;
-  background: transparent;
-  color: #9ed9e7;
+  border: 1px solid #bfd6de;
+  background: #ffffff;
+  color: #577580;
   font-size: 10px;
   font-weight: 800;
   cursor: pointer;
@@ -2459,10 +2986,14 @@ onMounted(() => {
 
 .modal-close-button:hover {
   transform: translateY(-1px);
-  border-color: #39d8ff;
-  background: rgba(57, 216, 255, 0.035);
-  color: #39d8ff;
+  border-color: #22b8df;
+  background: #f5fcfe;
+  color: #1597bb;
 }
+
+/* =========================
+   Animation
+   ========================= */
 
 .page-enter {
   animation:
@@ -2507,15 +3038,13 @@ onMounted(() => {
 @keyframes panel-enter {
   from {
     opacity: 0;
-    transform:
-      translateY(12px);
+    transform: translateY(12px);
     filter: blur(1.5px);
   }
 
   to {
     opacity: 1;
-    transform:
-      translateY(0);
+    transform: translateY(0);
     filter: blur(0);
   }
 }
@@ -2589,32 +3118,6 @@ onMounted(() => {
   }
 }
 
-@keyframes status-pulse {
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-
-  50% {
-    opacity: 0.45;
-    transform: scale(0.82);
-  }
-}
-
-@keyframes summary-line {
-  0%,
-  100% {
-    width: 25%;
-    opacity: 0.4;
-  }
-
-  50% {
-    width: 55%;
-    opacity: 1;
-  }
-}
-
 @keyframes row-scan {
   from {
     left: -25%;
@@ -2645,6 +3148,32 @@ onMounted(() => {
   }
 }
 
+@keyframes summary-line {
+  0%,
+  100% {
+    width: 25%;
+    opacity: 0.4;
+  }
+
+  50% {
+    width: 55%;
+    opacity: 1;
+  }
+}
+
+@keyframes status-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.45;
+    transform: scale(0.82);
+  }
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -2670,6 +3199,10 @@ onMounted(() => {
     left: 110%;
   }
 }
+
+/* =========================
+   Responsive
+   ========================= */
 
 @media (max-width: 1100px) {
   .summary-grid {

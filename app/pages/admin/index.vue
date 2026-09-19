@@ -143,9 +143,7 @@
           <div class="boot-progress-track">
             <div
               class="boot-progress-bar"
-              :style="{
-                width: `${bootProgress}%`
-              }"
+              :style="{ width: `${bootProgress}%` }"
             ></div>
 
             <div class="boot-progress-glow"></div>
@@ -253,13 +251,9 @@
         <div class="status-grid">
           <div class="status-card status-card-1">
             <div class="status-card-top">
-              <span class="status-card-index">
-                SYS-01
-              </span>
+              <span class="status-card-index">SYS-01</span>
 
-              <span
-                class="status-indicator online"
-              >
+              <span class="status-indicator online">
                 ●
               </span>
             </div>
@@ -285,9 +279,7 @@
 
           <div class="status-card status-card-2">
             <div class="status-card-top">
-              <span class="status-card-index">
-                SYS-02
-              </span>
+              <span class="status-card-index">SYS-02</span>
 
               <span
                 class="status-indicator"
@@ -332,9 +324,7 @@
 
           <div class="status-card status-card-3">
             <div class="status-card-top">
-              <span class="status-card-index">
-                SYS-03
-              </span>
+              <span class="status-card-index">SYS-03</span>
 
               <span
                 class="status-indicator"
@@ -385,9 +375,7 @@
             }"
           >
             <div class="status-card-top">
-              <span class="status-card-index">
-                SYS-04
-              </span>
+              <span class="status-card-index">SYS-04</span>
 
               <span
                 class="status-indicator"
@@ -570,37 +558,27 @@
           </div>
 
           <div class="log-row">
-            <span class="log-time">
-              [SYSTEM]
-            </span>
+            <span class="log-time">[SYSTEM]</span>
 
             <span class="log-message">
               管理者コンソールを初期化しました
             </span>
 
-            <span class="log-state">
-              OK
-            </span>
+            <span class="log-state">OK</span>
           </div>
 
           <div class="log-row">
-            <span class="log-time">
-              [NETWORK]
-            </span>
+            <span class="log-time">[NETWORK]</span>
 
             <span class="log-message">
               フロントエンド接続を確認しました
             </span>
 
-            <span class="log-state">
-              OK
-            </span>
+            <span class="log-state">OK</span>
           </div>
 
           <div class="log-row">
-            <span class="log-time">
-              [API]
-            </span>
+            <span class="log-time">[API]</span>
 
             <span class="log-message">
               Rails APIとの通信を確認しました
@@ -622,9 +600,7 @@
           </div>
 
           <div class="log-row">
-            <span class="log-time">
-              [DATABASE]
-            </span>
+            <span class="log-time">[DATABASE]</span>
 
             <span class="log-message">
               MySQLデータベース接続を確認しました
@@ -646,9 +622,7 @@
           </div>
 
           <div class="log-row">
-            <span class="log-time">
-              [DASHBOARD]
-            </span>
+            <span class="log-time">[DASHBOARD]</span>
 
             <span class="log-message">
               サービス統計データを取得しました
@@ -670,9 +644,7 @@
           </div>
 
           <div class="log-row">
-            <span class="log-time">
-              [MAINTENANCE]
-            </span>
+            <span class="log-time">[MAINTENANCE]</span>
 
             <span class="log-message">
               {{
@@ -698,9 +670,7 @@
           </div>
 
           <div class="log-row">
-            <span class="log-time">
-              [SYSTEM]
-            </span>
+            <span class="log-time">[SYSTEM]</span>
 
             <span class="log-message">
               最終ヘルスチェック
@@ -956,76 +926,81 @@ onMounted(() => {
 <style scoped>
 .admin-page {
   min-height: 100vh;
-  background:
-    radial-gradient(
-      circle at 50% -10%,
-      rgba(0, 210, 255, 0.08),
-      transparent 35%
-    ),
-    radial-gradient(
-      circle at 0% 100%,
-      rgba(0, 229, 255, 0.035),
-      transparent 28%
-    ),
-    #05080b;
-  color: #eef8fa;
+  color: var(--admin-text, #17313d);
   font-family:
     Inter,
     "Noto Sans JP",
     "Yu Gothic",
     Meiryo,
     sans-serif;
+  background:
+    radial-gradient(
+      circle at 50% -10%,
+      rgba(34, 184, 223, 0.08),
+      transparent 35%
+    ),
+    radial-gradient(
+      circle at 0% 100%,
+      rgba(34, 184, 223, 0.04),
+      transparent 28%
+    ),
+    var(--admin-bg, #f4f9fc);
 }
 
 .boot-screen {
   position: relative;
-  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  min-height: 100vh;
   padding: 24px;
+  overflow: hidden;
   background:
     radial-gradient(
       circle at center,
-      rgba(0, 229, 255, 0.08),
+      rgba(34, 184, 223, 0.07),
       transparent 38%
     ),
-    #04070a;
+    #f4f9fc;
 }
 
 .boot-screen::before {
   position: absolute;
   inset: 0;
   content: "";
+  pointer-events: none;
   background:
     radial-gradient(
-      circle at 50% 50%,
+      circle at center,
       transparent 0,
-      rgba(0, 0, 0, 0.12) 52%,
-      rgba(0, 0, 0, 0.5) 100%
+      rgba(255, 255, 255, 0.05) 50%,
+      rgba(194, 216, 225, 0.2) 100%
     );
-  pointer-events: none;
 }
 
 .boot-grid {
   position: absolute;
   inset: 0;
+  pointer-events: none;
   background-image:
     linear-gradient(
-      rgba(0, 229, 255, 0.045) 1px,
+      rgba(34, 184, 223, 0.045) 1px,
       transparent 1px
     ),
     linear-gradient(
       90deg,
-      rgba(0, 229, 255, 0.045) 1px,
+      rgba(34, 184, 223, 0.045) 1px,
       transparent 1px
     );
   background-size: 42px 42px;
-  pointer-events: none;
+  mask-image:
+    linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.7),
+      transparent 95%
+    );
   animation:
-    boot-grid-move 12s
-    linear infinite;
+    boot-grid-move 12s linear infinite;
 }
 
 .boot-scanline {
@@ -1034,18 +1009,17 @@ onMounted(() => {
   left: 0;
   width: 100%;
   height: 22%;
+  pointer-events: none;
   background:
     linear-gradient(
       to bottom,
       transparent,
-      rgba(0, 229, 255, 0.07),
+      rgba(34, 184, 223, 0.09),
       transparent
     );
   filter: blur(8px);
-  pointer-events: none;
   animation:
-    boot-scan 6s
-    linear infinite;
+    boot-scan 6s linear infinite;
 }
 
 .boot-glow {
@@ -1053,17 +1027,16 @@ onMounted(() => {
   width: 280px;
   height: 280px;
   border: 1px solid
-    rgba(0, 229, 255, 0.08);
+    rgba(34, 184, 223, 0.16);
   border-radius: 50%;
   box-shadow:
-    0 0 50px
-      rgba(0, 229, 255, 0.03),
+    0 0 55px
+      rgba(34, 184, 223, 0.07),
     inset 0 0 50px
-      rgba(0, 229, 255, 0.03);
-  animation:
-    boot-orbit 7s
-    linear infinite;
+      rgba(34, 184, 223, 0.05);
   pointer-events: none;
+  animation:
+    boot-orbit 7s linear infinite;
 }
 
 .boot-panel {
@@ -1071,18 +1044,14 @@ onMounted(() => {
   z-index: 2;
   width: min(760px, 100%);
   border: 1px solid
-    rgba(0, 229, 255, 0.35);
+    var(--admin-border, #cfe2e9);
   background:
-    linear-gradient(
-      180deg,
-      rgba(10, 19, 24, 0.98),
-      rgba(5, 10, 14, 0.98)
-    );
+    rgba(255, 255, 255, 0.97);
   box-shadow:
-    0 0 55px
-      rgba(0, 229, 255, 0.07),
+    0 24px 60px
+      rgba(42, 87, 101, 0.1),
     inset 0 0 40px
-      rgba(0, 229, 255, 0.02);
+      rgba(34, 184, 223, 0.025);
   animation:
     boot-panel-enter 0.8s
     cubic-bezier(0.16, 1, 0.3, 1)
@@ -1096,19 +1065,20 @@ onMounted(() => {
   justify-content: space-between;
   gap: 16px;
   padding: 13px 18px;
-  border-bottom: 1px solid
-    rgba(255, 255, 255, 0.09);
-  color: #819ba3;
+  color: #66818c;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.12em;
 }
 
+.boot-top {
+  border-bottom: 1px solid
+    var(--admin-border, #cfe2e9);
+}
+
 .boot-footer {
   border-top: 1px solid
-    rgba(255, 255, 255, 0.09);
-  border-bottom: none;
-  color: #62777d;
+    var(--admin-border, #cfe2e9);
 }
 
 .boot-main {
@@ -1117,28 +1087,30 @@ onMounted(() => {
 
 .boot-symbol-wrap {
   position: relative;
-  width: 54px;
-  height: 54px;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 54px;
+  height: 54px;
   border: 1px solid
-    rgba(0, 229, 255, 0.25);
+    rgba(34, 184, 223, 0.3);
   transform: rotate(45deg);
   box-shadow:
     inset 0 0 20px
-      rgba(0, 229, 255, 0.03);
+      rgba(34, 184, 223, 0.04),
+    0 0 20px
+      rgba(34, 184, 223, 0.05);
   animation:
     boot-symbol-box 1.4s
     ease-in-out infinite;
 }
 
 .boot-symbol {
-  color: #00e5ff;
+  color: #22b8df;
   font-size: 22px;
   text-shadow:
-    0 0 14px
-    rgba(0, 229, 255, 0.7);
+    0 0 12px
+    rgba(34, 184, 223, 0.35);
   transform: rotate(-45deg);
   animation:
     boot-symbol-pulse 1.2s
@@ -1147,7 +1119,7 @@ onMounted(() => {
 
 .boot-main h1 {
   margin: 20px 0 0;
-  color: #f5fdff;
+  color: #17313d;
   font-size: 31px;
   font-weight: 800;
   letter-spacing: 0.06em;
@@ -1155,14 +1127,14 @@ onMounted(() => {
 
 .boot-description {
   margin: 9px 0 0;
-  color: #8da3aa;
+  color: #728b94;
   font-size: 13px;
 }
 
 .boot-checks {
   margin: 0 36px;
   border-top: 1px solid
-    rgba(255, 255, 255, 0.09);
+    var(--admin-border, #cfe2e9);
 }
 
 .boot-check {
@@ -1173,15 +1145,15 @@ onMounted(() => {
   gap: 14px;
   align-items: center;
   min-height: 52px;
-  border-bottom: 1px solid
-    rgba(255, 255, 255, 0.08);
   overflow: hidden;
+  border-bottom: 1px solid
+    #e1edf1;
 }
 
 .boot-check::after {
   position: absolute;
-  left: -100%;
   bottom: 0;
+  left: -100%;
   width: 100%;
   height: 1px;
   content: "";
@@ -1189,7 +1161,7 @@ onMounted(() => {
     linear-gradient(
       90deg,
       transparent,
-      rgba(0, 229, 255, 0.6),
+      rgba(34, 184, 223, 0.55),
       transparent
     );
   animation:
@@ -1197,31 +1169,21 @@ onMounted(() => {
     linear infinite;
 }
 
-.boot-check.complete::after {
-  background:
-    linear-gradient(
-      90deg,
-      transparent,
-      rgba(0, 229, 255, 0.15),
-      transparent
-    );
-}
-
 .check-index {
-  color: #526971;
+  color: #78919a;
   font-size: 11px;
   font-weight: 700;
 }
 
 .check-name {
-  color: #c6d5d8;
+  color: #3b5963;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.05em;
 }
 
 .check-status {
-  color: #71848a;
+  color: #8aa0a7;
   font-size: 11px;
   font-weight: 800;
   text-align: right;
@@ -1229,20 +1191,17 @@ onMounted(() => {
 }
 
 .check-status.ready {
-  color: #00e5ff;
+  color: #22a97b;
   text-shadow:
-    0 0 9px
-    rgba(0, 229, 255, 0.65);
-  animation:
-    text-flicker 1.8s
-    ease-in-out infinite;
+    0 0 8px
+    rgba(34, 169, 123, 0.18);
 }
 
 .check-status.error {
-  color: #ff4d4d;
+  color: #e56557;
   text-shadow:
-    0 0 9px
-    rgba(255, 77, 77, 0.65);
+    0 0 8px
+    rgba(229, 101, 87, 0.18);
   animation:
     error-pulse 1s
     ease-in-out infinite;
@@ -1256,7 +1215,7 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   margin-bottom: 8px;
-  color: #6e858b;
+  color: #6f8790;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -1266,7 +1225,7 @@ onMounted(() => {
   position: relative;
   height: 7px;
   overflow: hidden;
-  background: #0a161b;
+  background: #e7f0f3;
 }
 
 .boot-progress-bar {
@@ -1276,12 +1235,12 @@ onMounted(() => {
   background:
     linear-gradient(
       90deg,
-      #008ba8,
-      #00e5ff
+      #1ba5c8,
+      #35c7e6
     );
   box-shadow:
-    0 0 14px
-    rgba(0, 229, 255, 0.75);
+    0 0 12px
+    rgba(34, 184, 223, 0.28);
   transition: width 0.5s ease;
 }
 
@@ -1295,13 +1254,12 @@ onMounted(() => {
     linear-gradient(
       90deg,
       transparent,
-      rgba(255, 255, 255, 0.75),
+      rgba(255, 255, 255, 0.8),
       transparent
     );
   filter: blur(2px);
   animation:
-    progress-glow 1.4s
-    linear infinite;
+    progress-glow 1.4s linear infinite;
 }
 
 .boot-message {
@@ -1309,45 +1267,37 @@ onMounted(() => {
   align-items: center;
   gap: 7px;
   padding: 0 36px 26px;
-  color: #00e5ff;
+  color: #22a9cc;
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.1em;
 }
 
 .boot-message-prefix {
-  color: #4b707a;
+  color: #73909a;
 }
 
 .boot-message.ready {
-  color: #c9fcff;
-  text-shadow:
-    0 0 10px
-    rgba(0, 229, 255, 0.55);
+  color: #22a97b;
 }
 
 .boot-message.error {
-  color: #ff4d4d;
-  text-shadow:
-    0 0 10px
-    rgba(255, 77, 77, 0.6);
+  color: #e56557;
 }
 
 .console-main {
   position: relative;
-  flex: 1;
-  min-width: 0;
   min-height: 100vh;
   padding: 30px 34px 42px;
-  overflow: auto;
   box-sizing: border-box;
+  overflow: auto;
   background:
     radial-gradient(
       circle at 30% 0%,
-      rgba(0, 229, 255, 0.05),
+      rgba(34, 184, 223, 0.05),
       transparent 35%
     ),
-    #03070a;
+    var(--admin-bg, #f4f9fc);
 }
 
 .main-scanline {
@@ -1361,13 +1311,12 @@ onMounted(() => {
     linear-gradient(
       to bottom,
       transparent,
-      rgba(0, 229, 255, 0.035),
+      rgba(34, 184, 223, 0.045),
       transparent
     );
   filter: blur(6px);
   animation:
-    main-scan 11s
-    linear infinite;
+    main-scan 11s linear infinite;
 }
 
 .console-header {
@@ -1378,32 +1327,32 @@ onMounted(() => {
   gap: 24px;
   padding-bottom: 24px;
   border-bottom: 1px solid
-    rgba(255, 255, 255, 0.1);
+    #cfe2e9;
 }
 
 .console-header::after {
   position: absolute;
-  left: 0;
   bottom: -1px;
+  left: 0;
   width: 22%;
   height: 1px;
   content: "";
   background:
     linear-gradient(
       90deg,
-      #00e5ff,
+      #22b8df,
       transparent
     );
   box-shadow:
-    0 0 10px
-    rgba(0, 229, 255, 0.45);
+    0 0 8px
+      rgba(34, 184, 223, 0.28);
   animation:
     header-line 4s
     ease-in-out infinite;
 }
 
 .header-kicker {
-  color: #5e7d85;
+  color: #66828d;
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.13em;
@@ -1411,7 +1360,7 @@ onMounted(() => {
 
 .console-header h1 {
   margin: 8px 0 0;
-  color: #f2fbfd;
+  color: #17313d;
   font-size: 29px;
   font-weight: 800;
   letter-spacing: 0.03em;
@@ -1419,7 +1368,7 @@ onMounted(() => {
 
 .console-header p {
   margin: 8px 0 0;
-  color: #84999f;
+  color: #708992;
   font-size: 12px;
 }
 
@@ -1433,19 +1382,19 @@ onMounted(() => {
   align-items: center;
   justify-content: flex-end;
   gap: 7px;
-  color: #00e5ff;
+  color: #22a97b;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.1em;
 }
 
 .header-status.error {
-  color: #ff4d4d;
+  color: #e56557;
 }
 
 .header-time {
   margin-top: 7px;
-  color: #52676e;
+  color: #71878f;
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -1457,20 +1406,20 @@ onMounted(() => {
   height: 8px;
   flex-shrink: 0;
   border-radius: 50%;
-  background: #00e5ff;
+  background: #31b985;
   box-shadow:
-    0 0 10px
-    rgba(0, 229, 255, 0.9);
+    0 0 8px
+    rgba(49, 185, 133, 0.45);
   animation:
     status-pulse 1.8s
     ease-in-out infinite;
 }
 
 .status-dot.offline {
-  background: #ff4d4d;
+  background: #e56557;
   box-shadow:
-    0 0 10px
-    rgba(255, 77, 77, 0.8);
+    0 0 8px
+    rgba(229, 101, 87, 0.4);
   animation:
     status-error-pulse 1.1s
     ease-in-out infinite;
@@ -1497,7 +1446,7 @@ onMounted(() => {
   width: 34px;
   flex-shrink: 0;
   padding-top: 2px;
-  color: #526a71;
+  color: #79929a;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -1505,7 +1454,7 @@ onMounted(() => {
 
 .section-heading h2 {
   margin: 0;
-  color: #e8f5f7;
+  color: #233f49;
   font-size: 18px;
   font-weight: 800;
   letter-spacing: 0.02em;
@@ -1513,19 +1462,19 @@ onMounted(() => {
 
 .section-heading p {
   margin: 5px 0 0;
-  color: #768b91;
+  color: #738b94;
   font-size: 11px;
 }
 
 .section-state {
-  color: #00e5ff;
+  color: #22a9cc;
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.1em;
 }
 
 .section-state.error {
-  color: #ff4d4d;
+  color: #e56557;
 }
 
 .status-grid {
@@ -1538,15 +1487,20 @@ onMounted(() => {
 .status-card {
   position: relative;
   min-width: 0;
+  overflow: hidden;
   border: 1px solid
-    rgba(255, 255, 255, 0.1);
+    var(--admin-border, #cfe2e9);
   background:
     linear-gradient(
       145deg,
-      #0a1217,
-      #071014
+      #ffffff,
+      #f8fcfd
     );
-  overflow: hidden;
+  box-shadow:
+    0 8px 24px
+      rgba(47, 88, 101, 0.055),
+    inset 0 0 24px
+      rgba(34, 184, 223, 0.02);
   animation:
     card-enter 0.65s
     cubic-bezier(0.16, 1, 0.3, 1)
@@ -1575,13 +1529,12 @@ onMounted(() => {
 
 .status-card:hover {
   transform: translateY(-3px);
-  border-color:
-    rgba(0, 229, 255, 0.22);
+  border-color: #9ed6e3;
   box-shadow:
-    0 12px 26px
-      rgba(0, 0, 0, 0.2),
-    0 0 24px
-      rgba(0, 229, 255, 0.03);
+    0 14px 28px
+      rgba(47, 88, 101, 0.08),
+    0 0 20px
+      rgba(34, 184, 223, 0.035);
 }
 
 .status-card-top {
@@ -1589,12 +1542,11 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 12px 14px;
-  border-bottom: 1px solid
-    rgba(255, 255, 255, 0.07);
+  border-bottom: 1px solid #e0edf1;
 }
 
 .status-card-index {
-  color: #526970;
+  color: #78919a;
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.1em;
@@ -1605,20 +1557,20 @@ onMounted(() => {
 }
 
 .status-indicator.online {
-  color: #00e5ff;
+  color: #31b985;
   text-shadow:
-    0 0 8px
-    rgba(0, 229, 255, 0.75);
+    0 0 7px
+    rgba(49, 185, 133, 0.35);
   animation:
     status-pulse 1.8s
     ease-in-out infinite;
 }
 
 .status-indicator.warning {
-  color: #ffd000;
+  color: #dcae38;
   text-shadow:
-    0 0 8px
-    rgba(255, 208, 0, 0.55);
+    0 0 7px
+    rgba(220, 174, 56, 0.35);
   animation:
     warning-pulse 1.6s
     ease-in-out infinite;
@@ -1630,7 +1582,7 @@ onMounted(() => {
 
 .status-card-label {
   display: block;
-  color: #668088;
+  color: #6b8790;
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.1em;
@@ -1639,45 +1591,44 @@ onMounted(() => {
 .status-card-body strong {
   display: block;
   margin-top: 9px;
-  color: #eefeff;
+  color: #23414b;
   font-size: 22px;
   font-weight: 800;
   letter-spacing: 0.04em;
 }
 
 .status-card-body strong.state-online {
-  color: #00e5ff;
+  color: #22a9cc;
   text-shadow:
     0 0 8px
-    rgba(0, 229, 255, 0.6);
+    rgba(34, 169, 204, 0.18);
 }
 
 .status-card-body strong.state-error {
-  color: #ff4d4d;
+  color: #e56557;
   text-shadow:
     0 0 8px
-    rgba(255, 77, 77, 0.55);
+    rgba(229, 101, 87, 0.15);
 }
 
 .status-card-body strong.state-maintenance {
-  color: #ffd000;
+  color: #d39f26;
   text-shadow:
-    0 0 10px
-    rgba(255, 208, 0, 0.6);
+    0 0 8px
+    rgba(211, 159, 38, 0.16);
 }
 
 .status-card-body p {
   margin: 8px 0 0;
-  color: #6a8087;
+  color: #728890;
   font-size: 10px;
   font-weight: 600;
 }
 
 .status-card-bottom {
   padding: 10px 16px;
-  border-top: 1px solid
-    rgba(255, 255, 255, 0.07);
-  color: #465c63;
+  border-top: 1px solid #e1edf1;
+  color: #81959c;
   font-size: 8px;
   font-weight: 800;
   letter-spacing: 0.1em;
@@ -1685,15 +1636,15 @@ onMounted(() => {
 
 .card-scan {
   position: absolute;
-  left: -30%;
   bottom: 0;
+  left: -30%;
   width: 30%;
   height: 1px;
   background:
     linear-gradient(
       90deg,
       transparent,
-      rgba(0, 229, 255, 0.65),
+      rgba(34, 184, 223, 0.7),
       transparent
     );
   opacity: 0;
@@ -1702,38 +1653,22 @@ onMounted(() => {
 .status-card:hover .card-scan {
   opacity: 1;
   animation:
-    card-scan 1s
-    ease-out;
-}
-
-.maintenance-card {
-  border-color:
-    rgba(255, 255, 255, 0.1);
-}
-
-.maintenance-card:hover {
-  border-color:
-    rgba(0, 229, 255, 0.22);
+    card-scan 1s ease-out;
 }
 
 .maintenance-card.active {
   border-color:
-    rgba(255, 208, 0, 0.28);
+    rgba(220, 174, 56, 0.5);
   box-shadow:
-    0 0 24px
-      rgba(255, 208, 0, 0.035),
-    inset 0 0 30px
-      rgba(255, 208, 0, 0.02);
+    0 0 20px
+      rgba(220, 174, 56, 0.035),
+    inset 0 0 24px
+      rgba(220, 174, 56, 0.02);
 }
 
 .maintenance-card.active:hover {
   border-color:
-    rgba(255, 208, 0, 0.42);
-  box-shadow:
-    0 12px 28px
-      rgba(0, 0, 0, 0.2),
-    0 0 24px
-      rgba(255, 208, 0, 0.05);
+    rgba(220, 174, 56, 0.7);
 }
 
 .maintenance-scan {
@@ -1741,7 +1676,7 @@ onMounted(() => {
     linear-gradient(
       90deg,
       transparent,
-      rgba(255, 208, 0, 0.6),
+      rgba(220, 174, 56, 0.65),
       transparent
     );
 }
@@ -1756,10 +1691,18 @@ onMounted(() => {
 .metric-card {
   position: relative;
   padding: 20px;
-  border: 1px solid
-    rgba(255, 255, 255, 0.09);
-  background: #081015;
   overflow: hidden;
+  border: 1px solid
+    var(--admin-border, #cfe2e9);
+  background:
+    linear-gradient(
+      145deg,
+      #ffffff,
+      #f9fcfd
+    );
+  box-shadow:
+    0 8px 24px
+      rgba(47, 88, 101, 0.045);
   animation:
     card-enter 0.65s
     cubic-bezier(0.16, 1, 0.3, 1)
@@ -1788,16 +1731,15 @@ onMounted(() => {
 
 .metric-card:hover {
   transform: translateY(-3px);
-  border-color:
-    rgba(0, 229, 255, 0.2);
+  border-color: #9ed6e3;
   box-shadow:
     0 12px 24px
-    rgba(0, 0, 0, 0.18);
+      rgba(47, 88, 101, 0.07);
 }
 
 .metric-label {
   display: block;
-  color: #607980;
+  color: #69838c;
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.1em;
@@ -1806,7 +1748,7 @@ onMounted(() => {
 .metric-card strong {
   display: block;
   margin-top: 10px;
-  color: #f3fcfe;
+  color: #17313d;
   font-size: 28px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
@@ -1815,25 +1757,25 @@ onMounted(() => {
 .metric-sub {
   display: block;
   margin-top: 5px;
-  color: #667b81;
+  color: #728990;
   font-size: 10px;
 }
 
 .metric-line {
   position: absolute;
-  left: 0;
   bottom: 0;
+  left: 0;
   width: 35%;
   height: 1px;
   background:
     linear-gradient(
       90deg,
-      #00e5ff,
+      #22b8df,
       transparent
     );
   box-shadow:
-    0 0 10px
-    rgba(0, 229, 255, 0.4);
+    0 0 8px
+      rgba(34, 184, 223, 0.25);
   animation:
     metric-line 3.5s
     ease-in-out infinite;
@@ -1845,8 +1787,9 @@ onMounted(() => {
   gap: 6px;
   padding: 5px 9px;
   border: 1px solid
-    rgba(0, 229, 255, 0.18);
-  color: #00e5ff;
+    rgba(34, 184, 223, 0.25);
+  color: #22a9cc;
+  background: rgba(34, 184, 223, 0.035);
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.1em;
@@ -1856,20 +1799,23 @@ onMounted(() => {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #00e5ff;
+  background: #31b985;
   box-shadow:
-    0 0 8px
-    rgba(0, 229, 255, 0.75);
+    0 0 7px
+      rgba(49, 185, 133, 0.5);
   animation:
     status-pulse 1.2s
     ease-in-out infinite;
 }
 
 .log-panel {
-  border: 1px solid
-    rgba(255, 255, 255, 0.1);
-  background: #050b0f;
   overflow: hidden;
+  border: 1px solid
+    var(--admin-border, #cfe2e9);
+  background: #ffffff;
+  box-shadow:
+    0 8px 24px
+      rgba(47, 88, 101, 0.045);
 }
 
 .log-panel-header {
@@ -1878,14 +1824,13 @@ onMounted(() => {
   justify-content: space-between;
   min-height: 38px;
   padding: 0 18px;
-  border-bottom: 1px solid
-    rgba(255, 255, 255, 0.07);
-  color: #4d666d;
+  border-bottom: 1px solid #e0edf1;
+  color: #708891;
+  background:
+    #f6fafb;
   font-size: 8px;
   font-weight: 800;
   letter-spacing: 0.1em;
-  background:
-    rgba(0, 229, 255, 0.015);
 }
 
 .log-row {
@@ -1897,12 +1842,10 @@ onMounted(() => {
   align-items: center;
   min-height: 54px;
   padding: 0 18px;
-  border-bottom: 1px solid
-    rgba(255, 255, 255, 0.06);
   overflow: hidden;
+  border-bottom: 1px solid #e5eef1;
   animation:
-    log-enter 0.5s
-    ease both;
+    log-enter 0.5s ease both;
 }
 
 .log-row:nth-child(2) {
@@ -1935,8 +1878,8 @@ onMounted(() => {
 
 .log-row::after {
   position: absolute;
-  left: -25%;
   bottom: 0;
+  left: -25%;
   width: 25%;
   height: 1px;
   content: "";
@@ -1944,7 +1887,7 @@ onMounted(() => {
     linear-gradient(
       90deg,
       transparent,
-      rgba(0, 229, 255, 0.35),
+      rgba(34, 184, 223, 0.35),
       transparent
     );
   opacity: 0;
@@ -1952,14 +1895,13 @@ onMounted(() => {
 
 .log-row:hover {
   background:
-    rgba(0, 229, 255, 0.018);
+    rgba(34, 184, 223, 0.025);
 }
 
 .log-row:hover::after {
   opacity: 1;
   animation:
-    log-scan 0.9s
-    ease-out;
+    log-scan 0.9s ease-out;
 }
 
 .log-row:last-child {
@@ -1967,20 +1909,20 @@ onMounted(() => {
 }
 
 .log-time {
-  color: #00bcd4;
+  color: #22a9cc;
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.03em;
 }
 
 .log-message {
-  color: #a9bbc0;
+  color: #45616b;
   font-size: 11px;
   font-weight: 600;
 }
 
 .log-state {
-  color: #00e5ff;
+  color: #22a97b;
   font-size: 9px;
   font-weight: 800;
   text-align: right;
@@ -1988,17 +1930,11 @@ onMounted(() => {
 }
 
 .log-error {
-  color: #ff4d4d;
-  text-shadow:
-    0 0 8px
-    rgba(255, 77, 77, 0.45);
+  color: #e56557;
 }
 
 .log-maintenance {
-  color: #ffd000;
-  text-shadow:
-    0 0 8px
-    rgba(255, 208, 0, 0.45);
+  color: #d39f26;
 }
 
 .section-appear {
@@ -2060,15 +1996,11 @@ onMounted(() => {
 
 @keyframes boot-orbit {
   from {
-    transform:
-      rotate(0deg)
-      scale(1);
+    transform: rotate(0deg) scale(1);
   }
 
   to {
-    transform:
-      rotate(360deg)
-      scale(1.02);
+    transform: rotate(360deg) scale(1.02);
   }
 }
 
@@ -2080,9 +2012,9 @@ onMounted(() => {
       scale(0.96);
     box-shadow:
       inset 0 0 20px
-        rgba(0, 229, 255, 0.03),
+        rgba(34, 184, 223, 0.04),
       0 0 0
-        rgba(0, 229, 255, 0);
+        rgba(34, 184, 223, 0);
   }
 
   50% {
@@ -2091,16 +2023,16 @@ onMounted(() => {
       scale(1.04);
     box-shadow:
       inset 0 0 20px
-        rgba(0, 229, 255, 0.03),
+        rgba(34, 184, 223, 0.04),
       0 0 24px
-        rgba(0, 229, 255, 0.08);
+        rgba(34, 184, 223, 0.08);
   }
 }
 
 @keyframes boot-symbol-pulse {
   0%,
   100% {
-    opacity: 0.7;
+    opacity: 0.65;
     transform:
       rotate(-45deg)
       scale(0.94);
@@ -2131,29 +2063,6 @@ onMounted(() => {
 
   to {
     left: 100%;
-  }
-}
-
-@keyframes text-flicker {
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  46% {
-    opacity: 0.75;
-  }
-
-  49% {
-    opacity: 1;
-  }
-
-  52% {
-    opacity: 0.5;
-  }
-
-  55% {
-    opacity: 1;
   }
 }
 

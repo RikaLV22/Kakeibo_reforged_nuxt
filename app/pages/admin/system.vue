@@ -61,7 +61,7 @@
         <div class="card-header">
           <div>
             <p class="card-eyebrow">01 / FRONTEND</p>
-            <h2>フロントエンド</h2>
+            <h2>Frontend</h2>
           </div>
 
           <span class="state-badge normal">
@@ -884,31 +884,16 @@ onMounted(() => {
   background:
     radial-gradient(
       circle at 82% 4%,
-      rgba(57, 216, 255, 0.075),
+      rgba(34, 184, 223, 0.08),
       transparent 26%
     ),
     radial-gradient(
       circle at 8% 92%,
-      rgba(59, 130, 246, 0.045),
+      rgba(49, 185, 133, 0.045),
       transparent 23%
     ),
-    linear-gradient(
-      rgba(0, 200, 255, 0.025) 1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      90deg,
-      rgba(0, 200, 255, 0.025) 1px,
-      transparent 1px
-    ),
-    #050a12;
-  background-size:
-    auto,
-    auto,
-    32px 32px,
-    32px 32px,
-    auto;
-  color: #e6f7ff;
+    #f4f9fc;
+  color: #17313d;
 }
 
 .ambient-grid {
@@ -916,27 +901,25 @@ onMounted(() => {
   inset: 0;
   z-index: -3;
   pointer-events: none;
-  opacity: 0.2;
+  opacity: 0.8;
   background-image:
     linear-gradient(
-      rgba(57, 216, 255, 0.035) 1px,
+      rgba(34, 184, 223, 0.035) 1px,
       transparent 1px
     ),
     linear-gradient(
       90deg,
-      rgba(57, 216, 255, 0.035) 1px,
+      rgba(34, 184, 223, 0.035) 1px,
       transparent 1px
     );
   background-size: 56px 56px;
   mask-image:
     linear-gradient(
       to bottom,
-      black,
+      rgba(0, 0, 0, 0.75),
       transparent 92%
     );
-  animation:
-    grid-drift 18s
-    linear infinite;
+  animation: grid-drift 18s linear infinite;
 }
 
 .ambient-scan {
@@ -947,18 +930,16 @@ onMounted(() => {
   height: 18%;
   z-index: -2;
   pointer-events: none;
-  opacity: 0.16;
+  opacity: 0.8;
   background:
     linear-gradient(
       to bottom,
       transparent,
-      rgba(57, 216, 255, 0.09),
+      rgba(34, 184, 223, 0.08),
       transparent
     );
   filter: blur(12px);
-  animation:
-    ambient-scan 10s
-    linear infinite;
+  animation: ambient-scan 10s linear infinite;
 }
 
 .page-heading,
@@ -984,7 +965,7 @@ onMounted(() => {
 .card-eyebrow,
 .panel-eyebrow {
   margin: 0 0 8px;
-  color: #39d8ff;
+  color: #22b8df;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.16em;
@@ -992,7 +973,7 @@ onMounted(() => {
 
 .page-heading h1 {
   margin: 0;
-  color: #eefcff;
+  color: #17313d;
   font-size: 32px;
   font-weight: 800;
   letter-spacing: 0.03em;
@@ -1000,9 +981,13 @@ onMounted(() => {
 
 .description {
   margin: 8px 0 0;
-  color: #7e98a8;
+  color: #6d8792;
   font-size: 13px;
 }
+
+/* =========================
+   Refresh
+   ========================= */
 
 .refresh-button {
   position: relative;
@@ -1011,9 +996,9 @@ onMounted(() => {
   gap: 7px;
   height: 40px;
   padding: 0 15px;
-  border: 1px solid #214457;
-  background: rgba(8, 22, 34, 0.8);
-  color: #8de8ff;
+  border: 1px solid #bcd8e2;
+  background: #ffffff;
+  color: #1598bc;
   font-size: 11px;
   font-weight: 800;
   cursor: pointer;
@@ -1036,7 +1021,7 @@ onMounted(() => {
     linear-gradient(
       90deg,
       transparent,
-      #39d8ff,
+      #22b8df,
       transparent
     );
   opacity: 0;
@@ -1044,18 +1029,16 @@ onMounted(() => {
 
 .refresh-button:hover:not(:disabled) {
   transform: translateY(-2px);
-  border-color: #39d8ff;
-  background: rgba(10, 34, 48, 0.9);
+  border-color: #22b8df;
+  background: #f8fdff;
   box-shadow:
-    0 0 20px
-    rgba(57, 216, 255, 0.06);
+    0 8px 22px rgba(34, 184, 223, 0.1),
+    0 0 0 3px rgba(34, 184, 223, 0.035);
 }
 
 .refresh-button:hover:not(:disabled)::after {
   opacity: 1;
-  animation:
-    button-scan 0.8s
-    ease-out;
+  animation: button-scan 0.8s ease-out;
 }
 
 .refresh-button:disabled {
@@ -1070,29 +1053,33 @@ onMounted(() => {
 }
 
 .refresh-icon.spinning {
-  animation:
-    spin 0.8s
-    linear infinite;
+  animation: spin 0.8s linear infinite;
 }
+
+/* =========================
+   Common Panels
+   ========================= */
 
 .status-banner,
 .monitor-card,
 .metric-card,
 .detail-panel,
 .error-panel {
-  border: 1px solid #193444;
+  border: 1px solid #cfe2e9;
   background:
     linear-gradient(
       145deg,
-      rgba(7, 19, 29, 0.94),
-      rgba(4, 12, 19, 0.94)
+      rgba(255, 255, 255, 0.97),
+      rgba(248, 252, 253, 0.94)
     );
   box-shadow:
-    inset 0 0 30px
-    rgba(0, 150, 220, 0.025),
-    0 12px 35px
-    rgba(0, 0, 0, 0.1);
+    inset 0 0 30px rgba(34, 184, 223, 0.018),
+    0 12px 35px rgba(47, 88, 106, 0.065);
 }
+
+/* =========================
+   Status Banner
+   ========================= */
 
 .status-banner {
   position: relative;
@@ -1111,10 +1098,9 @@ onMounted(() => {
   bottom: 0;
   width: 2px;
   content: "";
-  background: #39d8ff;
+  background: #22b8df;
   box-shadow:
-    0 0 14px
-    rgba(57, 216, 255, 0.5);
+    0 0 14px rgba(34, 184, 223, 0.45);
 }
 
 .status-banner::after {
@@ -1128,27 +1114,24 @@ onMounted(() => {
     linear-gradient(
       90deg,
       transparent,
-      rgba(57, 216, 255, 0.65),
+      rgba(34, 184, 223, 0.55),
       transparent
     );
-  animation:
-    banner-scan 4s
-    linear infinite;
+  animation: banner-scan 4s linear infinite;
 }
 
 .status-banner.normal {
-  border-color: #245445;
+  border-color: #bee1d2;
 }
 
 .status-banner.warning {
-  border-color: #69552d;
+  border-color: #e4d4a5;
 }
 
 .status-banner.warning::before {
-  background: #e8ba54;
+  background: #dcae38;
   box-shadow:
-    0 0 14px
-    rgba(232, 186, 84, 0.5);
+    0 0 14px rgba(220, 174, 56, 0.4);
 }
 
 .status-banner.warning::after {
@@ -1156,20 +1139,19 @@ onMounted(() => {
     linear-gradient(
       90deg,
       transparent,
-      rgba(232, 186, 84, 0.65),
+      rgba(220, 174, 56, 0.55),
       transparent
     );
 }
 
 .status-banner.error {
-  border-color: #633c38;
+  border-color: #e5bbb5;
 }
 
 .status-banner.error::before {
-  background: #ff7662;
+  background: #e56557;
   box-shadow:
-    0 0 14px
-    rgba(255, 118, 98, 0.5);
+    0 0 14px rgba(229, 101, 87, 0.4);
 }
 
 .status-banner.error::after {
@@ -1177,7 +1159,7 @@ onMounted(() => {
     linear-gradient(
       90deg,
       transparent,
-      rgba(255, 118, 98, 0.65),
+      rgba(229, 101, 87, 0.55),
       transparent
     );
 }
@@ -1188,38 +1170,39 @@ onMounted(() => {
   height: 12px;
   flex-shrink: 0;
   border-radius: 50%;
-  background: #39d8ff;
+  background: #31b985;
   box-shadow:
-    0 0 12px
-    rgba(57, 216, 255, 0.8);
-  animation:
-    status-pulse 1.8s
-    ease-in-out infinite;
+    0 0 12px rgba(49, 185, 133, 0.55);
+  animation: status-pulse 1.8s ease-in-out infinite;
 }
 
 .status-indicator::after {
   position: absolute;
   inset: -6px;
   content: "";
-  border: 1px solid rgba(57, 216, 255, 0.15);
+  border: 1px solid rgba(49, 185, 133, 0.15);
   border-radius: 50%;
-  animation:
-    status-ring 1.8s
-    ease-out infinite;
+  animation: status-ring 1.8s ease-out infinite;
 }
 
 .status-banner.warning .status-indicator {
-  background: #e8ba54;
+  background: #dcae38;
   box-shadow:
-    0 0 12px
-    rgba(232, 186, 84, 0.7);
+    0 0 12px rgba(220, 174, 56, 0.55);
+}
+
+.status-banner.warning .status-indicator::after {
+  border-color: rgba(220, 174, 56, 0.15);
 }
 
 .status-banner.error .status-indicator {
-  background: #ff7662;
+  background: #e56557;
   box-shadow:
-    0 0 12px
-    rgba(255, 118, 98, 0.7);
+    0 0 12px rgba(229, 101, 87, 0.55);
+}
+
+.status-banner.error .status-indicator::after {
+  border-color: rgba(229, 101, 87, 0.15);
 }
 
 .status-main {
@@ -1229,7 +1212,7 @@ onMounted(() => {
 
 .status-label {
   display: block;
-  color: #557481;
+  color: #6d8792;
   font-size: 8px;
   font-weight: 800;
   letter-spacing: 0.14em;
@@ -1238,14 +1221,14 @@ onMounted(() => {
 .status-main strong {
   display: block;
   margin-top: 4px;
-  color: #effcff;
+  color: #17313d;
   font-size: 18px;
   font-weight: 800;
 }
 
 .status-main p {
   margin: 4px 0 0;
-  color: #708a96;
+  color: #708993;
   font-size: 10px;
 }
 
@@ -1256,12 +1239,10 @@ onMounted(() => {
     linear-gradient(
       90deg,
       transparent,
-      rgba(57, 216, 255, 0.35),
+      rgba(34, 184, 223, 0.28),
       transparent
     );
-  animation:
-    pulse-line 2.2s
-    ease-in-out infinite;
+  animation: pulse-line 2.2s ease-in-out infinite;
 }
 
 .last-check {
@@ -1270,7 +1251,7 @@ onMounted(() => {
 
 .last-check span {
   display: block;
-  color: #557481;
+  color: #6d8792;
   font-size: 8px;
   font-weight: 800;
   letter-spacing: 0.12em;
@@ -1279,9 +1260,13 @@ onMounted(() => {
 .last-check strong {
   display: block;
   margin-top: 4px;
-  color: #aac3cc;
+  color: #55717c;
   font-size: 10px;
 }
+
+/* =========================
+   Monitor Cards
+   ========================= */
 
 .monitor-grid {
   display: grid;
@@ -1319,12 +1304,10 @@ onMounted(() => {
 
 .monitor-card:hover {
   transform: translateY(-3px);
-  border-color: rgba(57, 216, 255, 0.25);
+  border-color: rgba(34, 184, 223, 0.32);
   box-shadow:
-    inset 0 0 30px
-    rgba(0, 150, 220, 0.035),
-    0 15px 35px
-    rgba(0, 0, 0, 0.18);
+    inset 0 0 30px rgba(34, 184, 223, 0.03),
+    0 15px 35px rgba(47, 88, 106, 0.1);
 }
 
 .card-glow {
@@ -1334,15 +1317,14 @@ onMounted(() => {
   width: 130px;
   height: 130px;
   border-radius: 50%;
-  background: rgba(57, 216, 255, 0.025);
+  background: rgba(34, 184, 223, 0.035);
   filter: blur(25px);
   pointer-events: none;
-  transition:
-    background 0.25s ease;
+  transition: background 0.25s ease;
 }
 
 .monitor-card:hover .card-glow {
-  background: rgba(57, 216, 255, 0.05);
+  background: rgba(34, 184, 223, 0.065);
 }
 
 .card-scan {
@@ -1356,16 +1338,14 @@ onMounted(() => {
     linear-gradient(
       90deg,
       transparent,
-      rgba(57, 216, 255, 0.55),
+      rgba(34, 184, 223, 0.5),
       transparent
     );
 }
 
 .monitor-card:hover .card-scan {
   opacity: 1;
-  animation:
-    card-scan 1s
-    ease-out;
+  animation: card-scan 1s ease-out;
 }
 
 .card-header,
@@ -1376,7 +1356,7 @@ onMounted(() => {
   justify-content: space-between;
   gap: 15px;
   padding: 17px 18px;
-  border-bottom: 1px solid #173443;
+  border-bottom: 1px solid #d6e7ec;
 }
 
 .card-header::after,
@@ -1391,18 +1371,16 @@ onMounted(() => {
     linear-gradient(
       90deg,
       transparent,
-      rgba(57, 216, 255, 0.45),
+      rgba(34, 184, 223, 0.45),
       transparent
     );
-  animation:
-    header-scan 5s
-    linear infinite;
+  animation: header-scan 5s linear infinite;
 }
 
 .card-header h2,
 .panel-header h2 {
   margin: 0;
-  color: #edfaff;
+  color: #24434f;
   font-size: 16px;
   font-weight: 800;
 }
@@ -1414,7 +1392,7 @@ onMounted(() => {
   min-width: 50px;
   height: 22px;
   padding: 0 8px;
-  border: 1px solid #35515d;
+  border: 1px solid #cadde3;
   font-size: 8px;
   font-weight: 800;
   letter-spacing: 0.06em;
@@ -1426,21 +1404,18 @@ onMounted(() => {
   border-radius: 50%;
   background: currentColor;
   box-shadow:
-    0 0 7px
-    currentColor;
-  animation:
-    status-pulse 1.7s
-    ease-in-out infinite;
+    0 0 7px currentColor;
+  animation: status-pulse 1.7s ease-in-out infinite;
 }
 
 .state-badge.normal {
-  border-color: #3c8069;
-  color: #79eabc;
+  border-color: #b9ddce;
+  color: #2fa878;
 }
 
 .state-badge.error {
-  border-color: #75483f;
-  color: #ff9987;
+  border-color: #e1beb9;
+  color: #d96254;
 }
 
 .monitor-body {
@@ -1454,7 +1429,7 @@ onMounted(() => {
   justify-content: space-between;
   gap: 15px;
   padding: 10px 0;
-  border-bottom: 1px solid rgba(23, 52, 67, 0.7);
+  border-bottom: 1px solid #e4eef1;
 }
 
 .state-row:last-child,
@@ -1464,7 +1439,7 @@ onMounted(() => {
 
 .state-row span,
 .info-row span {
-  color: #52707d;
+  color: #738b95;
   font-size: 8px;
   font-weight: 800;
   letter-spacing: 0.1em;
@@ -1472,18 +1447,18 @@ onMounted(() => {
 
 .state-row strong,
 .info-row strong {
-  color: #c8e5ed;
+  color: #365762;
   font-size: 10px;
   font-weight: 800;
   text-align: right;
 }
 
 .normal-text {
-  color: #79eabc !important;
+  color: #249c72 !important;
 }
 
 .error-text {
-  color: #ff9987 !important;
+  color: #d96254 !important;
 }
 
 .card-footer-line {
@@ -1495,10 +1470,14 @@ onMounted(() => {
   background:
     linear-gradient(
       90deg,
-      rgba(57, 216, 255, 0.16),
+      rgba(34, 184, 223, 0.16),
       transparent
     );
 }
+
+/* =========================
+   Metrics
+   ========================= */
 
 .metrics-grid {
   display: grid;
@@ -1540,12 +1519,10 @@ onMounted(() => {
 
 .metric-card:hover {
   transform: translateY(-3px);
-  border-color: rgba(57, 216, 255, 0.23);
+  border-color: rgba(34, 184, 223, 0.3);
   box-shadow:
-    inset 0 0 30px
-    rgba(57, 216, 255, 0.025),
-    0 12px 28px
-    rgba(0, 0, 0, 0.15);
+    inset 0 0 30px rgba(34, 184, 223, 0.025),
+    0 12px 28px rgba(47, 88, 106, 0.09);
 }
 
 .metric-card::before {
@@ -1555,15 +1532,18 @@ onMounted(() => {
   width: 27%;
   height: 1px;
   content: "";
-  background: #39d8ff;
+  background: #22b8df;
   box-shadow:
-    0 0 10px
-    rgba(57, 216, 255, 0.45);
+    0 0 10px rgba(34, 184, 223, 0.3);
+}
+
+.metric-card:nth-child(4)::before {
+  background: #31b985;
 }
 
 .metric-label {
   display: block;
-  color: #557481;
+  color: #6d8792;
   font-size: 8px;
   font-weight: 800;
   letter-spacing: 0.13em;
@@ -1572,7 +1552,7 @@ onMounted(() => {
 .metric-card strong {
   display: block;
   margin-top: 8px;
-  color: #ebfbff;
+  color: #24434f;
   font-size: 24px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
@@ -1581,7 +1561,7 @@ onMounted(() => {
 .metric-card > span:last-of-type {
   display: block;
   margin-top: 3px;
-  color: #617b86;
+  color: #78929d;
   font-size: 9px;
 }
 
@@ -1595,13 +1575,17 @@ onMounted(() => {
     linear-gradient(
       90deg,
       transparent,
-      rgba(57, 216, 255, 0.55),
+      rgba(34, 184, 223, 0.45),
       transparent
     );
   animation:
     metric-scan 4s
     ease-in-out infinite;
 }
+
+/* =========================
+   Detail Panel
+   ========================= */
 
 .detail-panel {
   overflow: hidden;
@@ -1627,7 +1611,7 @@ onMounted(() => {
 .control-label {
   display: block;
   margin-bottom: 7px;
-  color: #39d8ff;
+  color: #22b8df;
   font-size: 8px;
   font-weight: 800;
   letter-spacing: 0.14em;
@@ -1635,7 +1619,7 @@ onMounted(() => {
 
 .backend-control-info strong {
   display: block;
-  color: #e6f9ff;
+  color: #31525e;
   font-size: 15px;
   font-weight: 800;
 }
@@ -1643,7 +1627,7 @@ onMounted(() => {
 .backend-control-info p {
   max-width: 700px;
   margin: 7px 0 0;
-  color: #698592;
+  color: #6d8792;
   font-size: 10px;
   line-height: 1.7;
 }
@@ -1652,7 +1636,7 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  color: #79eabc;
+  color: #2fa878;
   font-size: 8px;
   font-weight: 800;
   letter-spacing: 0.1em;
@@ -1664,31 +1648,25 @@ onMounted(() => {
   border-radius: 50%;
   background: currentColor;
   box-shadow:
-    0 0 8px
-    currentColor;
+    0 0 8px currentColor;
 }
 
-.restart-status.status-checking {
-  color: #54dcff;
-}
-
+.restart-status.status-checking,
 .restart-status.status-restarting {
-  color: #54dcff;
+  color: #22a7cb;
 }
 
 .restart-status.status-checking > span,
 .restart-status.status-restarting > span {
-  animation:
-    status-pulse 0.8s
-    ease-in-out infinite;
+  animation: status-pulse 0.8s ease-in-out infinite;
 }
 
 .restart-status.status-success {
-  color: #79eabc;
+  color: #299f77;
 }
 
 .restart-status.status-failed {
-  color: #ff9987;
+  color: #d96254;
 }
 
 .restart-button {
@@ -1701,14 +1679,14 @@ onMounted(() => {
   justify-content: center;
   gap: 10px;
   padding: 0 18px;
-  border: 1px solid rgba(57, 216, 255, 0.45);
+  border: 1px solid #94cede;
   background:
     linear-gradient(
       135deg,
-      rgba(15, 54, 71, 0.7),
-      rgba(7, 27, 38, 0.8)
+      #effbfe,
+      #f8fdfe
     );
-  color: #e9fbff;
+  color: #238ba8;
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.12em;
@@ -1732,7 +1710,7 @@ onMounted(() => {
     linear-gradient(
       90deg,
       transparent,
-      #39d8ff,
+      #22b8df,
       transparent
     );
   opacity: 0;
@@ -1740,23 +1718,21 @@ onMounted(() => {
 
 .restart-button:hover:not(:disabled) {
   transform: translateY(-2px);
-  border-color: #39d8ff;
+  border-color: #22b8df;
   background:
     linear-gradient(
       135deg,
-      rgba(18, 69, 90, 0.8),
-      rgba(8, 34, 46, 0.9)
+      #eaf9fd,
+      #ffffff
     );
   box-shadow:
-    0 0 28px
-    rgba(57, 216, 255, 0.1);
+    0 0 26px rgba(34, 184, 223, 0.1),
+    0 8px 22px rgba(47, 88, 106, 0.08);
 }
 
 .restart-button:hover:not(:disabled)::before {
   opacity: 1;
-  animation:
-    restart-scan 0.8s
-    ease-out;
+  animation: restart-scan 0.8s ease-out;
 }
 
 .restart-button:disabled {
@@ -1772,13 +1748,12 @@ onMounted(() => {
 
 .restart-icon.restarting {
   animation:
-    spin 0.8s
-    linear infinite;
+    spin 0.8s linear infinite;
 }
 
 .restart-progress {
   height: 1px;
-  background: rgba(24, 58, 74, 0.8);
+  background: #e2edf1;
   overflow: hidden;
 }
 
@@ -1789,7 +1764,7 @@ onMounted(() => {
     linear-gradient(
       90deg,
       transparent,
-      #39d8ff,
+      #22b8df,
       transparent
     );
 }
@@ -1797,9 +1772,12 @@ onMounted(() => {
 .restart-progress-bar.active {
   width: 100%;
   animation:
-    restart-progress 1.5s
-    linear infinite;
+    restart-progress 1.5s linear infinite;
 }
+
+/* =========================
+   Communication Path
+   ========================= */
 
 .communication-panel {
   margin-bottom: 16px;
@@ -1809,7 +1787,7 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: #5edfee;
+  color: #239bbd;
   font-size: 8px;
   font-weight: 800;
   letter-spacing: 0.1em;
@@ -1819,13 +1797,11 @@ onMounted(() => {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #39d8ff;
+  background: #31b985;
   box-shadow:
-    0 0 7px
-    rgba(57, 216, 255, 0.7);
+    0 0 7px rgba(49, 185, 133, 0.55);
   animation:
-    status-pulse 1.3s
-    ease-in-out infinite;
+    status-pulse 1.3s ease-in-out infinite;
 }
 
 .communication-path {
@@ -1841,12 +1817,12 @@ onMounted(() => {
   gap: 10px;
   min-width: 190px;
   padding: 12px;
-  border: 1px solid #35515d;
+  border: 1px solid #c9dde4;
   background:
     linear-gradient(
       135deg,
-      rgba(7, 22, 31, 0.95),
-      rgba(5, 14, 21, 0.95)
+      #ffffff,
+      #f6fbfd
     );
   transition:
     border-color 0.22s ease,
@@ -1856,29 +1832,28 @@ onMounted(() => {
 
 .path-node:hover {
   transform: translateY(-2px);
-  border-color: rgba(57, 216, 255, 0.3);
+  border-color: rgba(34, 184, 223, 0.35);
   box-shadow:
-    0 8px 22px
-    rgba(0, 0, 0, 0.16);
+    0 8px 22px rgba(47, 88, 106, 0.08);
 }
 
 .path-node.normal {
-  border-color: #2d6854;
+  border-color: #b9dccc;
 }
 
 .path-node.error {
-  border-color: #75483f;
+  border-color: #dfbdb8;
 }
 
 .node-number {
-  color: #39d8ff;
+  color: #22a6ca;
   font-size: 8px;
   font-weight: 800;
 }
 
 .path-node strong {
   display: block;
-  color: #dff8ff;
+  color: #31525e;
   font-size: 10px;
   font-weight: 800;
 }
@@ -1886,24 +1861,24 @@ onMounted(() => {
 .path-node small {
   display: block;
   margin-top: 3px;
-  color: #58737f;
+  color: #79939d;
   font-size: 8px;
 }
 
 .node-state {
   margin-left: auto;
-  color: #5c7b86;
+  color: #7e969f;
   font-size: 7px;
   font-weight: 800;
   letter-spacing: 0.08em;
 }
 
 .path-node.normal .node-state {
-  color: #79eabc;
+  color: #299d75;
 }
 
 .path-node.error .node-state {
-  color: #ff9987;
+  color: #d96254;
 }
 
 .path-line {
@@ -1912,7 +1887,7 @@ onMounted(() => {
   height: 2px;
   margin: 0 8px;
   overflow: hidden;
-  background: #294956;
+  background: #d4e5ea;
 }
 
 .path-line::before,
@@ -1922,9 +1897,9 @@ onMounted(() => {
   width: 5px;
   height: 5px;
   content: "";
-  border: 1px solid #39d8ff;
+  border: 1px solid #22b8df;
   border-radius: 50%;
-  background: #050a12;
+  background: #f4f9fc;
   transform: translateY(-50%);
   z-index: 3;
 }
@@ -1947,22 +1922,20 @@ onMounted(() => {
     linear-gradient(
       90deg,
       transparent 0%,
-      rgba(57, 216, 255, 0.15) 15%,
-      #39d8ff 50%,
-      rgba(57, 216, 255, 0.15) 85%,
+      rgba(34, 184, 223, 0.12) 15%,
+      #22b8df 50%,
+      rgba(34, 184, 223, 0.12) 85%,
       transparent 100%
     );
   box-shadow:
-    0 0 8px
-    rgba(57, 216, 255, 0.9);
+    0 0 8px rgba(34, 184, 223, 0.55);
   opacity: 0;
 }
 
 .path-line.active .path-flow {
   opacity: 1;
   animation:
-    flow-line 1.6s
-    linear infinite;
+    flow-line 1.6s linear infinite;
 }
 
 .path-line span {
@@ -1970,12 +1943,16 @@ onMounted(() => {
   left: 50%;
   top: -18px;
   transform: translateX(-50%);
-  color: #557f8d;
+  color: #6c8994;
   font-size: 8px;
   font-weight: 800;
   white-space: nowrap;
   z-index: 4;
 }
+
+/* =========================
+   Information
+   ========================= */
 
 .detail-grid {
   display: grid;
@@ -1989,6 +1966,10 @@ onMounted(() => {
   padding: 8px 18px 14px;
 }
 
+/* =========================
+   Errors
+   ========================= */
+
 .error-panel {
   margin-bottom: 16px;
   overflow: hidden;
@@ -1998,7 +1979,7 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: #61808b;
+  color: #718a94;
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.1em;
@@ -2008,10 +1989,9 @@ onMounted(() => {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #79eabc;
+  background: #31b985;
   box-shadow:
-    0 0 7px
-    rgba(121, 234, 188, 0.55);
+    0 0 7px rgba(49, 185, 133, 0.5);
 }
 
 .no-errors {
@@ -2032,13 +2012,12 @@ onMounted(() => {
   justify-content: center;
   width: 38px;
   height: 38px;
-  border: 1px solid #3c8069;
-  color: #79eabc;
+  border: 1px solid #a9d9c5;
+  color: #2da477;
   font-size: 16px;
   font-weight: 800;
   box-shadow:
-    0 0 18px
-    rgba(121, 234, 188, 0.035);
+    0 0 18px rgba(49, 185, 133, 0.035);
 }
 
 .no-error-icon::before,
@@ -2047,7 +2026,7 @@ onMounted(() => {
   width: 7px;
   height: 7px;
   content: "";
-  border-color: rgba(121, 234, 188, 0.35);
+  border-color: rgba(49, 185, 133, 0.35);
 }
 
 .no-error-icon::before {
@@ -2065,14 +2044,18 @@ onMounted(() => {
 }
 
 .no-errors strong {
-  color: #aacbd4;
+  color: #45626d;
   font-size: 10px;
 }
 
 .no-errors > span {
-  color: #5e7984;
+  color: #8097a0;
   font-size: 9px;
 }
+
+/* =========================
+   Floating Error
+   ========================= */
 
 .floating-error {
   position: fixed;
@@ -2084,19 +2067,18 @@ onMounted(() => {
   gap: 8px;
   max-width: 360px;
   padding: 12px 15px;
-  border: 1px solid #75483f;
+  border: 1px solid #e0b5b0;
   background:
     linear-gradient(
       135deg,
-      rgba(48, 18, 15, 0.96),
-      rgba(35, 12, 10, 0.96)
+      #fff9f8,
+      #ffffff
     );
-  color: #ff9987;
+  color: #cf5d51;
   font-size: 10px;
   font-weight: 700;
   box-shadow:
-    0 16px 40px
-    rgba(0, 0, 0, 0.3);
+    0 16px 40px rgba(47, 88, 106, 0.14);
 }
 
 .floating-error > span {
@@ -2105,8 +2087,8 @@ onMounted(() => {
   justify-content: center;
   width: 18px;
   height: 18px;
-  border: 1px solid #75483f;
-  color: #ff9987;
+  border: 1px solid #dfa59e;
+  color: #cf5d51;
 }
 
 .floating-error-enter-active,
@@ -2123,6 +2105,10 @@ onMounted(() => {
     translateY(8px)
     scale(0.98);
 }
+
+/* =========================
+   Page Animation
+   ========================= */
 
 .page-enter {
   animation:
@@ -2217,13 +2203,11 @@ onMounted(() => {
 
 @keyframes grid-drift {
   from {
-    background-position:
-      0 0;
+    background-position: 0 0;
   }
 
   to {
-    background-position:
-      56px 56px;
+    background-position: 56px 56px;
   }
 }
 
@@ -2358,16 +2342,39 @@ onMounted(() => {
   }
 }
 
+@keyframes flow-line-vertical {
+  0% {
+    top: -35%;
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  85% {
+    opacity: 1;
+  }
+
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
   }
 }
 
+/* =========================
+   Responsive
+   ========================= */
+
 @media (max-width: 1000px) {
   .monitor-grid {
-    grid-template-columns:
-      1fr;
+    grid-template-columns: 1fr;
   }
 
   .metrics-grid {
@@ -2404,6 +2411,10 @@ onMounted(() => {
     flex-direction: column;
   }
 
+  .refresh-button {
+    align-self: flex-start;
+  }
+
   .status-banner {
     align-items: flex-start;
     flex-wrap: wrap;
@@ -2416,14 +2427,13 @@ onMounted(() => {
   .last-check {
     width: 100%;
     padding-top: 8px;
-    border-top: 1px solid #173443;
+    border-top: 1px solid #dbe8ed;
     text-align: left;
   }
 
   .metrics-grid,
   .detail-grid {
-    grid-template-columns:
-      1fr;
+    grid-template-columns: 1fr;
   }
 
   .communication-path {
@@ -2459,9 +2469,9 @@ onMounted(() => {
       linear-gradient(
         180deg,
         transparent 0%,
-        rgba(57, 216, 255, 0.15) 15%,
-        #39d8ff 50%,
-        rgba(57, 216, 255, 0.15) 85%,
+        rgba(34, 184, 223, 0.12) 15%,
+        #22b8df 50%,
+        rgba(34, 184, 223, 0.12) 85%,
         transparent 100%
       );
   }
@@ -2484,26 +2494,6 @@ onMounted(() => {
     bottom: 16px;
     left: 16px;
     max-width: none;
-  }
-}
-
-@keyframes flow-line-vertical {
-  0% {
-    top: -35%;
-    opacity: 0;
-  }
-
-  10% {
-    opacity: 1;
-  }
-
-  85% {
-    opacity: 1;
-  }
-
-  100% {
-    top: 100%;
-    opacity: 0;
   }
 }
 
