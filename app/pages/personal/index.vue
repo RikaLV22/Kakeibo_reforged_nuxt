@@ -16,6 +16,7 @@
             <TransactionCalendar
               api-base-path="/personal_transactions"
               account-api-base-path="/personal_accounts"
+              transaction-scope="personal"
             />
           </div>
         </div>
