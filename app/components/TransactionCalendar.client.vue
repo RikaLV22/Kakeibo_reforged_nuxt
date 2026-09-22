@@ -77,6 +77,7 @@ const props = withDefaults(
 
 type TransactionUser = {
   id: number
+  public_id?: string | null
   username: string
   name?: string | null
   icon_image_url?: string | null
@@ -837,11 +838,44 @@ const openModalForEvent = (
     return
   }
 
+  const userId = Number(
+    transaction.user_id ??
+    transaction.user?.id
+  )
+
+  const userSummary =
+    Number.isFinite(userId)
+      ? userMonthlySummary.value.get(
+          userId
+        )
+      : undefined
+
+  const monthlyIncome =
+    userSummary?.income ?? 0
+
+  const monthlyExpense =
+    userSummary?.expense ?? 0
+
+  const monthlyBalance =
+    userSummary?.balance ??
+    (
+      monthlyIncome -
+      monthlyExpense
+    )
+
+  selectedTransaction.value = {
+    ...transaction,
+    user_monthly_income:
+      monthlyIncome,
+    user_monthly_expense:
+      monthlyExpense,
+    user_monthly_balance:
+      monthlyBalance
+  }
+
   editingId.value =
     transaction.id
   isEditMode.value = false
-  selectedTransaction.value =
-    transaction
   selectedDate.value =
     transaction.date
   showModal.value = true

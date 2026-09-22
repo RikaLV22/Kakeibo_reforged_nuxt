@@ -8,19 +8,20 @@
         <div class="system-label">
           SYS / AUDIT LOG
         </div>
-
         <h1>操作ログ</h1>
-
-        <p>
-          ADMINISTRATOR ACTIVITY MONITOR
-        </p>
+        <p>ADMINISTRATOR ACTIVITY MONITOR</p>
       </div>
 
-      <div class="header-status">
-        <span class="status-dot"></span>
-
+      <div
+        class="header-status"
+        :class="{ error: !!loadError }"
+      >
+        <span
+          class="status-dot"
+          :class="{ offline: !!loadError }"
+        ></span>
         <span>
-          LOGGING ACTIVE
+          {{ loadError ? 'LOGGING ERROR' : 'LOGGING ACTIVE' }}
         </span>
       </div>
     </header>
@@ -28,7 +29,6 @@
     <section class="log-panel">
       <div class="panel-header">
         <span>RECENT ACTIVITY</span>
-
         <span>
           {{ logs.length.toString().padStart(2, '0') }}
           RECORDS
@@ -36,7 +36,29 @@
       </div>
 
       <div
-        v-if="logs.length"
+        v-if="isLoading"
+        class="empty-state"
+      >
+        <span>LOADING LOG DATA...</span>
+      </div>
+
+      <div
+        v-else-if="loadError"
+        class="empty-state"
+      >
+        <span class="empty-mark">!</span>
+        <span>{{ loadError }}</span>
+        <button
+          class="retry-button"
+          type="button"
+          @click="fetchLogs"
+        >
+          RETRY
+        </button>
+      </div>
+
+      <div
+        v-else-if="logs.length"
         class="log-list"
       >
         <div
@@ -56,7 +78,14 @@
             {{ log.message }}
           </div>
 
-          <div class="log-status">
+          <div
+            class="log-status"
+            :class="{
+              'log-status-error':
+                log.status === 'ERROR' ||
+                log.status === 'FAILED'
+            }"
+          >
             {{ log.status }}
           </div>
         </div>
@@ -74,6 +103,8 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted, ref } from 'vue'
+
 definePageMeta({
   layout: 'admin'
 })
@@ -86,32 +117,47 @@ interface LogItem {
   status: string
 }
 
-const logs = ref<LogItem[]>([
-  {
-    id: 1,
-    time: '22:30:15',
-    type: 'AUTH',
-    message:
-      'Administrator session initialized',
-    status: 'SUCCESS'
-  },
-  {
-    id: 2,
-    time: '22:28:41',
-    type: 'SYSTEM',
-    message:
-      'System health check completed',
-    status: 'SUCCESS'
-  },
-  {
-    id: 3,
-    time: '22:24:08',
-    type: 'DATA',
-    message:
-      'Transaction records synchronized',
-    status: 'SUCCESS'
+const { $api } = useNuxtApp()
+
+const logs = ref<LogItem[]>([])
+const isLoading = ref(true)
+const loadError = ref('')
+
+const fetchLogs = async () => {
+  isLoading.value = true
+  loadError.value = ''
+
+  try {
+    const response = await $api.get<LogItem[]>(
+      '/admin/logs'
+    )
+
+    logs.value = Array.isArray(response.data)
+      ? response.data
+      : []
+  } catch (error: any) {
+    console.error(
+      '管理ログの取得に失敗しました:',
+      error
+    )
+
+    if (error?.response?.status === 403) {
+      loadError.value =
+        '管理者権限が必要です'
+    } else {
+      loadError.value =
+        '管理ログの取得に失敗しました'
+    }
+
+    logs.value = []
+  } finally {
+    isLoading.value = false
   }
-])
+}
+
+onMounted(() => {
+  fetchLogs()
+})
 </script>
 
 <style scoped>
@@ -258,6 +304,11 @@ const logs = ref<LogItem[]>([
     rgba(42, 87, 101, 0.04);
 }
 
+.header-status.error {
+  border-color: rgba(229, 101, 87, 0.3);
+  color: #d45d50;
+}
+
 .status-dot {
   width: 7px;
   height: 7px;
@@ -270,6 +321,13 @@ const logs = ref<LogItem[]>([
   animation:
     status-pulse 1.6s
     ease-in-out infinite;
+}
+
+.status-dot.offline {
+  background: #e56557;
+  box-shadow:
+    0 0 8px
+    rgba(229, 101, 87, 0.4);
 }
 
 .log-panel {
@@ -471,6 +529,13 @@ const logs = ref<LogItem[]>([
     rgba(49, 185, 133, 0.14);
 }
 
+.log-status-error {
+  color: #d45d50;
+  text-shadow:
+    0 0 7px
+    rgba(212, 93, 80, 0.14);
+}
+
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -478,10 +543,13 @@ const logs = ref<LogItem[]>([
   justify-content: center;
   gap: 10px;
   min-height: 240px;
+  padding: 30px;
+  box-sizing: border-box;
   color: #8198a0;
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.14em;
+  text-align: center;
 }
 
 .empty-mark {
@@ -496,11 +564,29 @@ const logs = ref<LogItem[]>([
   font-weight: 400;
 }
 
+.retry-button {
+  min-width: 80px;
+  padding: 8px 14px;
+  border: 1px solid
+    var(--admin-border-strong, #afd0da);
+  background: #fff;
+  color: var(--admin-primary-dark, #1298bc);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.retry-button:hover {
+  border-color: var(--admin-primary, #22b8df);
+  background: var(--admin-primary-soft, #e8f8fc);
+}
+
 @keyframes page-scan {
   from {
     transform: translateY(0);
   }
-
   to {
     transform: translateY(760%);
   }
@@ -512,7 +598,6 @@ const logs = ref<LogItem[]>([
     width: 120px;
     opacity: 0.45;
   }
-
   50% {
     width: 260px;
     opacity: 1;
@@ -523,7 +608,6 @@ const logs = ref<LogItem[]>([
   from {
     left: -20%;
   }
-
   to {
     left: 110%;
   }
@@ -535,7 +619,6 @@ const logs = ref<LogItem[]>([
     opacity: 1;
     transform: scale(1);
   }
-
   50% {
     opacity: 0.45;
     transform: scale(0.82);

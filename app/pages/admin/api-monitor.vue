@@ -54,7 +54,7 @@
       <div class="stage-vignette"></div>
       <svg class="topology-lines" viewBox="0 0 1000 700" preserveAspectRatio="none" aria-hidden="true">
         <line v-for="(api, index) in monitor?.apis ?? []" :key="`base-${api.name}`" class="hud-line base" x1="500" y1="350" :x2="hudNodeX(index)" :y2="hudNodeY(index)" />
-        <line v-for="(api, index) in monitor?.apis ?? []" :key="`flow-${api.name}`" class="hud-line" :class="`status-${api.status}`" x1="500" y1="350" :x2="hudNodeX(index)" :y2="hudNodeY(index)" />
+        <line v-for="(api, index) in monitor?.apis ?? []" :key="`flow-${api.name}`" class="hud-line" :class="`status-${apiDisplayStatus(api)}`" x1="500" y1="350" :x2="hudNodeX(index)" :y2="hudNodeY(index)" />
       </svg>
       <div class="system-core" :class="statusClass">
         <div class="core-ring ring-outer"></div>
@@ -84,7 +84,7 @@
           </div>
         </div>
       </div>
-      <button v-for="(api, index) in monitor?.apis ?? []" :key="api.name" class="hud-api-node" :class="`status-${api.status}`" :style="hudNodeStyle(index)" type="button" @click="openDetail(api)">
+      <button v-for="(api, index) in monitor?.apis ?? []" :key="api.name" class="hud-api-node" :class="`status-${apiDisplayStatus(api)}`" :style="hudNodeStyle(index)" type="button" @click="openDetail(api)">
         <span class="node-corner tl"></span>
         <span class="node-corner tr"></span>
         <span class="node-corner bl"></span>
@@ -96,7 +96,7 @@
           <span class="node-state">
             <i>
             </i>
-            {{ statusLabel(api.status) }}
+            {{ statusLabel(apiDisplayStatus(api)) }}
           </span>
         </div>
         <strong>{{ apiShortLabel(api.name) }}</strong>
@@ -136,6 +136,13 @@
       </span>
       <strong>{{ warningCount }}</strong>
       <small>DEGRADED</small>
+    </div>
+    <div class="readout-card maintenance">
+      <span>
+        MAINTENANCE
+      </span>
+      <strong>{{ maintenanceCount }}</strong>
+      <small>OFFLINE BY ADMIN</small>
     </div>
     <div class="readout-card error">
       <span>
@@ -211,7 +218,7 @@
       </div>
     </div>
     <div class="api-list">
-      <button v-for="(api, index) in monitor?.apis ?? []" :key="api.name" class="api-list-row" :class="`status-${api.status}`" type="button" @click="openDetail(api)">
+      <div v-for="(api, index) in monitor?.apis ?? []" :key="api.name" class="api-list-row" :class="`status-${apiDisplayStatus(api)}`" role="button" tabindex="0" @click="openDetail(api)" @keydown.enter="openDetail(api)" @keydown.space.prevent="openDetail(api)">
         <span class="api-list-index">
           {{ String(index + 1).padStart(2, '0') }}
         </span>
@@ -225,15 +232,23 @@
         </span>
         <span class="api-list-response">
           <small>RESPONSE</small>
-          <strong>{{ api.response_time_ms.toFixed(2) }} ms</strong>
+          <strong>{{ api.enabled === false ? '—' : `${api.response_time_ms.toFixed(2)} ms` }}</strong>
         </span>
         <span class="api-list-state">
-          {{ statusLabel(api.status) }}
+          {{ statusLabel(apiDisplayStatus(api)) }}
         </span>
+        <button type="button" class="api-switch" :class="{ active: api.enabled !== false, maintenance: api.enabled === false }" :disabled="updatingApiName === api.name" :aria-pressed="api.enabled !== false" :aria-label="`${api.name} を${api.enabled === false ? 'ONに戻す' : 'メンテナンスにする'}`" @click.stop="toggleApiMaintenance(api)">
+          <span class="api-switch-track">
+            <span class="api-switch-thumb"></span>
+          </span>
+          <span class="api-switch-label">
+            {{ api.enabled === false ? 'OFF' : 'ON' }}
+          </span>
+        </button>
         <span class="api-list-arrow">
           →
         </span>
-      </button>
+      </div>
     </div>
   </section>
   <Transition name="modal">
@@ -247,13 +262,27 @@
           <button class="close-button" type="button" @click="closeDetail">×</button>
         </div>
         <div class="modal-status-row">
-          <div class="modal-status" :class="`status-${selectedApi.status}`">
+          <div class="modal-status" :class="`status-${apiDisplayStatus(selectedApi)}`">
             <span></span>
-            {{ statusLabel(selectedApi.status) }}
+            {{ statusLabel(apiDisplayStatus(selectedApi)) }}
           </div>
           <div class="modal-response">
-            {{ selectedApi.response_time_ms.toFixed(2) }} ms
+            {{ selectedApi.enabled === false ? 'MAINTENANCE' : `${selectedApi.response_time_ms.toFixed(2)} ms` }}
           </div>
+        </div>
+        <div class="modal-maintenance-section">
+          <div>
+            <span class="modal-section-label">SERVICE CONTROL</span>
+            <p>このAPIを一時停止してメンテナンス状態にします。</p>
+          </div>
+          <button type="button" class="api-switch modal-switch" :class="{ active: selectedApi.enabled !== false, maintenance: selectedApi.enabled === false }" :disabled="updatingApiName === selectedApi.name" :aria-pressed="selectedApi.enabled !== false" @click="toggleApiMaintenance(selectedApi)">
+            <span class="api-switch-track">
+              <span class="api-switch-thumb"></span>
+            </span>
+            <span class="api-switch-label">
+              {{ selectedApi.enabled === false ? 'OFF / MAINTENANCE' : 'ON / ONLINE' }}
+            </span>
+          </button>
         </div>
         <div v-if="selectedApiDefinition" class="modal-section">
           <span class="modal-section-label">
@@ -330,6 +359,7 @@ definePageMeta({
 })
 
 type ApiStatus = 'normal' | 'warning' | 'error'
+type ApiDisplayStatus = ApiStatus | 'maintenance'
 
 interface ApiError {
   class: string
@@ -343,6 +373,7 @@ interface ApiMonitorItem {
   status: ApiStatus
   response_time_ms: number
   error: ApiError | null
+  enabled?: boolean
 }
 
 interface BackendStatus {
@@ -374,8 +405,17 @@ const { $api } = useNuxtApp()
 const monitor = ref<ApiMonitorResponse | null>(null)
 const isLoading = ref(false)
 const loadError = ref('')
-const selectedApi = ref<ApiMonitorItem | null>(null)
+const selectedApiName = ref<string | null>(null)
 const isDetailOpen = ref(false)
+const updatingApiName = ref<string | null>(null)
+
+const selectedApi = computed<ApiMonitorItem | null>(() => {
+  if (!selectedApiName.value) {
+    return null
+  }
+
+  return monitor.value?.apis.find(api => api.name === selectedApiName.value) ?? null
+})
 
 let refreshTimer: ReturnType<typeof setInterval> | null = null
 
@@ -519,19 +559,23 @@ const apiCount = computed(() => {
 })
 
 const normalCount = computed(() => {
-  return monitor.value?.apis.filter(api => api.status === 'normal').length ?? 0
+  return monitor.value?.apis.filter(api => api.enabled !== false && api.status === 'normal').length ?? 0
 })
 
 const warningCount = computed(() => {
-  return monitor.value?.apis.filter(api => api.status === 'warning').length ?? 0
+  return monitor.value?.apis.filter(api => api.enabled !== false && api.status === 'warning').length ?? 0
 })
 
 const errorCount = computed(() => {
-  return monitor.value?.apis.filter(api => api.status === 'error').length ?? 0
+  return monitor.value?.apis.filter(api => api.enabled !== false && api.status === 'error').length ?? 0
+})
+
+const maintenanceCount = computed(() => {
+  return monitor.value?.apis.filter(api => api.enabled === false).length ?? 0
 })
 
 const averageApiResponse = computed(() => {
-  const apis = monitor.value?.apis ?? []
+  const apis = (monitor.value?.apis ?? []).filter(api => api.enabled !== false)
 
   if (!apis.length) {
     return '0.00'
@@ -552,6 +596,10 @@ const selectedApiDefinition = computed<ApiDefinition | null>(() => {
 
   return apiDefinitions[selectedApi.value.name] ?? null
 })
+
+const apiDisplayStatus = (api: ApiMonitorItem): ApiDisplayStatus => {
+  return api.enabled === false ? 'maintenance' : api.status
+}
 
 const overallStatusLabel = computed(() => {
   if (!monitor.value) {
@@ -598,27 +646,51 @@ const statusMessage = computed(() => {
 })
 
 const backendStatusLabel = computed(() => {
-  return monitor.value?.backend.status === 'normal'
-    ? 'ONLINE'
-    : 'ERROR'
+  if (monitor.value?.backend.status === 'normal') {
+    return 'ONLINE'
+  }
+
+  if (monitor.value?.backend.status === 'warning') {
+    return 'WARNING'
+  }
+
+  return 'ERROR'
 })
 
 const backendStatusClass = computed(() => {
-  return monitor.value?.backend.status === 'normal'
-    ? 'normal'
-    : 'error'
+  if (monitor.value?.backend.status === 'normal') {
+    return 'normal'
+  }
+
+  if (monitor.value?.backend.status === 'warning') {
+    return 'warning'
+  }
+
+  return 'error'
 })
 
 const databaseStatusLabel = computed(() => {
-  return monitor.value?.database.status === 'normal'
-    ? 'ONLINE'
-    : 'ERROR'
+  if (monitor.value?.database.status === 'normal') {
+    return 'ONLINE'
+  }
+
+  if (monitor.value?.database.status === 'warning') {
+    return 'WARNING'
+  }
+
+  return 'ERROR'
 })
 
 const databaseStateClass = computed(() => {
-  return monitor.value?.database.status === 'normal'
-    ? 'normal'
-    : 'error'
+  if (monitor.value?.database.status === 'normal') {
+    return 'normal'
+  }
+
+  if (monitor.value?.database.status === 'warning') {
+    return 'warning'
+  }
+
+  return 'error'
 })
 
 const backendResponseTime = computed(() => {
@@ -637,13 +709,17 @@ const databaseResponseTime = computed(() => {
   return `${monitor.value.database.response_time_ms.toFixed(2)} ms`
 })
 
-const statusLabel = (status: ApiStatus) => {
+const statusLabel = (status: ApiDisplayStatus) => {
   if (status === 'normal') {
     return 'ONLINE'
   }
 
   if (status === 'warning') {
     return 'WARNING'
+  }
+
+  if (status === 'maintenance') {
+    return 'MAINTENANCE'
   }
 
   return 'ERROR'
@@ -679,7 +755,17 @@ const fetchMonitor = async () => {
       '/admin/api_monitor'
     )
 
-    monitor.value = response.data
+    const previousEnabled = new Map(
+      (monitor.value?.apis ?? []).map(api => [api.name, api.enabled])
+    )
+
+    monitor.value = {
+      ...response.data,
+      apis: response.data.apis.map(api => ({
+        ...api,
+        enabled: api.enabled ?? previousEnabled.get(api.name) ?? true
+      }))
+    }
   } catch (error: any) {
     console.error('API監視情報の取得に失敗しました:', error)
 
@@ -694,13 +780,82 @@ const fetchMonitor = async () => {
 }
 
 const openDetail = (api: ApiMonitorItem) => {
-  selectedApi.value = api
+  selectedApiName.value = api.name
   isDetailOpen.value = true
 }
 
 const closeDetail = () => {
   isDetailOpen.value = false
-  selectedApi.value = null
+  selectedApiName.value = null
+}
+
+const toggleApiMaintenance = async (api: ApiMonitorItem) => {
+  if (updatingApiName.value === api.name) {
+    return
+  }
+
+  const previousEnabled = api.enabled !== false
+  const nextEnabled = !previousEnabled
+  updatingApiName.value = api.name
+  loadError.value = ''
+
+  if (monitor.value) {
+    monitor.value = {
+      ...monitor.value,
+      apis: monitor.value.apis.map(item =>
+        item.name === api.name
+          ? { ...item, enabled: nextEnabled }
+          : item
+      )
+    }
+  }
+
+  try {
+    const response = await $api.patch<{
+      message: string
+      api_name: string
+      enabled: boolean
+    }>('/admin/api_monitor/maintenance', {
+      api_name: api.name,
+      enabled: nextEnabled
+    })
+
+    const confirmedEnabled =
+      typeof response.data?.enabled === 'boolean'
+        ? response.data.enabled
+        : nextEnabled
+
+    if (monitor.value) {
+      monitor.value = {
+        ...monitor.value,
+        apis: monitor.value.apis.map(item =>
+          item.name === api.name
+            ? { ...item, enabled: confirmedEnabled }
+            : item
+        )
+      }
+    }
+  } catch (error: any) {
+    console.error('APIメンテナンス状態の更新に失敗しました:', error)
+
+    if (monitor.value) {
+      monitor.value = {
+        ...monitor.value,
+        apis: monitor.value.apis.map(item =>
+          item.name === api.name
+            ? { ...item, enabled: previousEnabled }
+            : item
+        )
+      }
+    }
+
+    loadError.value =
+      error?.response?.status === 403
+        ? '管理者権限が必要です。'
+        : `${api.name} のメンテナンス状態を更新できませんでした。`
+  } finally {
+    updatingApiName.value = null
+  }
 }
 
 const startAutoRefresh = () => {
@@ -1078,6 +1233,13 @@ onUnmounted(() => {
   filter:drop-shadow(0 0 5px rgba(255,119,100,.55));
 }
 
+.hud-line.status-maintenance {
+  stroke:#b99be8;
+  stroke-width:1.15;
+  stroke-dasharray:2 10;
+  opacity:.75;
+}
+
 .system-core {
   position:absolute;
   left:50%;
@@ -1286,6 +1448,11 @@ onUnmounted(() => {
   border-color:#613a36;
 }
 
+.hud-api-node.status-maintenance {
+  border-color:#5a4b72;
+  opacity:.86;
+}
+
 .node-corner {
   position:absolute;
   width:8px;
@@ -1368,6 +1535,14 @@ onUnmounted(() => {
   color:#ff9987;
 }
 
+.hud-api-node.status-maintenance .node-state {
+  color:#b99be8;
+}
+
+.status-maintenance .node-corner {
+  border-color:#b99be8;
+}
+
 .hud-api-node>strong {
   display:block;
   margin-top:15px;
@@ -1442,7 +1617,7 @@ onUnmounted(() => {
 
 .readout-grid {
   display:grid;
-  grid-template-columns:repeat(4,minmax(0,1fr));
+  grid-template-columns:repeat(5,minmax(0,1fr));
   gap:10px;
   margin-bottom:14px;
 }
@@ -1511,6 +1686,14 @@ onUnmounted(() => {
 
 .readout-card.error strong {
   color:#ff9987;
+}
+
+.readout-card.maintenance::before {
+  background:#b99be8;
+}
+
+.readout-card.maintenance strong {
+  color:#b99be8;
 }
 
 .infrastructure-panel {
@@ -1611,7 +1794,7 @@ onUnmounted(() => {
 
 .api-list-row {
   display:grid;
-  grid-template-columns:42px 22px minmax(0,1fr) 120px 80px 24px;
+  grid-template-columns:42px 22px minmax(0,1fr) 120px 90px 84px 24px;
   align-items:center;
   gap:9px;
   min-height:64px;
@@ -1635,6 +1818,10 @@ onUnmounted(() => {
 
 .api-list-row.status-error {
   background:rgba(255,119,100,.018);
+}
+
+.api-list-row.status-maintenance {
+  background:rgba(185,155,232,.025);
 }
 
 .api-list-index {
@@ -1713,6 +1900,80 @@ onUnmounted(() => {
 
 .status-error .api-list-state {
   color:#ff9987;
+}
+
+.status-maintenance .api-list-state {
+  color:#b99be8;
+}
+
+.status-maintenance .api-list-indicator i {
+  color:#b99be8;
+}
+
+.api-switch {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  min-width:78px;
+  padding:4px 6px;
+  border:1px solid #285061;
+  background:rgba(4,15,23,.72);
+  color:#79eabc;
+  font:800 7px 'SFMono-Regular',Consolas,monospace;
+  cursor:pointer;
+  transition:.18s;
+}
+
+.api-switch:hover:not(:disabled) {
+  border-color:#39d8ff;
+  box-shadow:0 0 14px rgba(57,216,255,.08);
+}
+
+.api-switch:disabled {
+  opacity:.5;
+  cursor:not-allowed;
+}
+
+.api-switch-track {
+  position:relative;
+  width:25px;
+  height:12px;
+  border:1px solid currentColor;
+  border-radius:8px;
+  box-sizing:border-box;
+}
+
+.api-switch-thumb {
+  position:absolute;
+  left:2px;
+  top:2px;
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:currentColor;
+  box-shadow:0 0 6px currentColor;
+  transition:transform .18s ease;
+}
+
+.api-switch.active .api-switch-thumb {
+  transform:translateX(13px);
+}
+
+.api-switch.active {
+  color:#79eabc;
+  border-color:#245444;
+}
+
+.api-switch.maintenance {
+  color:#b99be8;
+  border-color:#5a4b72;
+}
+
+.api-switch-label {
+  min-width:42px;
+  text-align:left;
+  white-space:nowrap;
 }
 
 .api-list-arrow {
@@ -1805,10 +2066,35 @@ onUnmounted(() => {
   color:#ff9987;
 }
 
+.modal-status.status-maintenance {
+  color:#b99be8;
+}
+
 .modal-response {
   color:#b6d9e3;
   font-size:10px;
   font-variant-numeric:tabular-nums;
+}
+
+.modal-maintenance-section {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  padding:15px 18px;
+  border-bottom:1px solid rgba(23,58,72,.7);
+  background:rgba(57,216,255,.02);
+}
+
+.modal-maintenance-section p {
+  margin:0;
+  color:#6f8b96;
+  font-size:8px;
+  line-height:1.6;
+}
+
+.modal-switch {
+  min-width:136px;
 }
 
 .modal-section {
@@ -2116,7 +2402,7 @@ onUnmounted(() => {
 }
 
 
-/* ===== LIGHT HUD THEME ===== */
+
 .admin-api-monitor{
   background:
     radial-gradient(circle at 50% 45%,rgba(57,216,255,.08),transparent 30%),
@@ -2171,6 +2457,7 @@ onUnmounted(() => {
 .admin-api-monitor .stage-grid{background-image:linear-gradient(rgba(31,117,142,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(31,117,142,.055) 1px,transparent 1px);opacity:.9}
 .admin-api-monitor .stage-vignette{background:radial-gradient(circle at center,transparent 22%,rgba(230,240,244,.08) 62%,rgba(205,221,227,.34) 100%)}
 .admin-api-monitor .hud-line.base{stroke:#b8d0d8}
+.admin-api-monitor .hud-line.status-maintenance{stroke:#9a74c7}
 .admin-api-monitor .system-core{
   background:radial-gradient(circle,rgba(255,255,255,.98),rgba(239,247,249,.98) 68%);
   border-color:rgba(38,135,160,.36);
@@ -2229,6 +2516,20 @@ onUnmounted(() => {
 .admin-api-monitor .api-list-state{color:#168a67}
 .admin-api-monitor .api-list-row.status-warning .api-list-state{color:#a47712}
 .admin-api-monitor .api-list-row.status-error .api-list-state{color:#c45846}
+.admin-api-monitor .api-list-row.status-maintenance{background:rgba(145,112,190,.04)}
+.admin-api-monitor .status-maintenance .api-list-state{color:#7754a8}
+.admin-api-monitor .api-switch{border-color:#c8b8dd;background:#fbf9fe;color:#168a67}
+.admin-api-monitor .api-switch.active{border-color:#a9d5c8;color:#168a67}
+.admin-api-monitor .api-switch.maintenance{border-color:#cdbfe0;color:#7754a8;background:#faf8fd}
+.admin-api-monitor .hud-api-node.status-maintenance{border-color:#cdbfe0}
+.admin-api-monitor .hud-api-node.status-maintenance .node-state{color:#7754a8}
+.admin-api-monitor .status-maintenance .node-corner{border-color:#7754a8}
+.admin-api-monitor .status-maintenance .api-list-indicator i{color:#7754a8}
+.admin-api-monitor .readout-card.maintenance::before{background:#9a74c7}
+.admin-api-monitor .readout-card.maintenance strong{color:#7754a8}
+.admin-api-monitor .modal-status.status-maintenance{color:#7754a8}
+.admin-api-monitor .modal-maintenance-section{background:rgba(145,112,190,.025)}
+
 .admin-api-monitor .api-list-arrow{color:#66828c}
 .admin-api-monitor .modal-overlay{background:rgba(236,244,247,.78)}
 .admin-api-monitor .api-detail-modal{

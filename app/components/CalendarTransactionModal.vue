@@ -1,7 +1,11 @@
 <template>
   <Teleport to="body">
     <Transition name="modal">
-      <div v-if="modelValue" class="modal-overlay" @click.self="closeModal">
+      <div
+        v-if="modelValue"
+        class="modal-overlay"
+        @click.self="closeModal"
+      >
         <div class="transaction-modal">
           <div class="modal-header">
             <div>
@@ -11,38 +15,92 @@
               </h2>
               <p class="modal-date">{{ selectedDate }}</p>
             </div>
-            <button type="button" class="modal-close" @click="closeModal">×</button>
+
+            <button
+              type="button"
+              class="modal-close"
+              @click="closeModal"
+            >
+              ×
+            </button>
           </div>
 
-          <div v-if="editingId" class="registered-user-card">
-            <div class="registered-user-cover" :style="registeredUserBackgroundStyle">
+          <div
+            v-if="editingId"
+            class="registered-user-card"
+          >
+            <div
+              class="registered-user-cover"
+              :style="registeredUserBackgroundStyle"
+            >
               <div class="registered-user-cover-overlay"></div>
-              <div class="registered-user-avatar" :style="registeredUserIconStyle">
-                <img v-if="registeredUserIcon" :src="registeredUserIcon" :alt="registeredUserName">
-                <span v-else class="registered-user-initial">@</span>
+
+              <div
+                class="registered-user-avatar"
+                :style="registeredUserIconStyle"
+              >
+                <img
+                  v-if="registeredUserIcon"
+                  :src="registeredUserIcon"
+                  :alt="registeredUserName"
+                >
+
+                <span
+                  v-else
+                  class="registered-user-initial"
+                >
+                  @
+                </span>
               </div>
             </div>
 
             <div class="registered-user-main">
               <div class="registered-user-content">
                 <span class="registered-user-label">REGISTERED BY</span>
-                <strong class="registered-user-display-name">{{ registeredUserDisplayName }}</strong>
-                <span class="registered-user-username">@{{ registeredUserName }}</span>
+
+                <strong class="registered-user-display-name">
+                  {{ registeredUserDisplayName }}
+                </strong>
+
+                <span class="registered-user-username">
+                  UserID：{{ registeredUserPublicId }}
+                </span>
               </div>
 
               <div class="registered-user-summary">
                 <div class="user-summary-item income">
                   <span>THIS MONTH INCOME</span>
-                  <strong>+¥{{ formatMonthlyAmount(userMonthlyIncome) }}</strong>
+                  <strong>
+                    +¥{{ formatMonthlyAmount(userMonthlyIncome) }}
+                  </strong>
                 </div>
+
                 <div class="user-summary-item expense">
                   <span>THIS MONTH EXPENSE</span>
-                  <strong>-¥{{ formatMonthlyAmount(userMonthlyExpense) }}</strong>
-                </div>
-                <div class="user-summary-item balance" :class="{ negative: userMonthlyBalance < 0 }">
-                  <span>THIS MONTH BALANCE</span>
                   <strong>
-                    {{ userMonthlyBalance >= 0 ? '+' : '-' }}¥{{ formatMonthlyAmount(Math.abs(userMonthlyBalance)) }}
+                    -¥{{ formatMonthlyAmount(userMonthlyExpense) }}
+                  </strong>
+                </div>
+
+                <div
+                  class="user-summary-item balance"
+                  :class="{
+                    negative:
+                      userMonthlyBalance < 0
+                  }"
+                >
+                  <span>THIS MONTH BALANCE</span>
+
+                  <strong>
+                    {{
+                      userMonthlyBalance >= 0
+                        ? '+'
+                        : '-'
+                    }}¥{{ formatMonthlyAmount(
+                      Math.abs(
+                        userMonthlyBalance
+                      )
+                    ) }}
                   </strong>
                 </div>
               </div>
@@ -50,59 +108,104 @@
           </div>
 
           <div class="modal-body">
-            <div v-if="!isEditMode" class="detail-grid">
+            <div
+              v-if="!isEditMode"
+              class="detail-grid"
+            >
               <div class="detail-item">
                 <span class="detail-label">TYPE</span>
-                <strong class="detail-value" :class="transactionType === 'income' ? 'income' : 'expense'">
+
+                <strong
+                  class="detail-value"
+                  :class="
+                    transactionType === 'income'
+                      ? 'income'
+                      : 'expense'
+                  "
+                >
                   {{ transactionTypeLabel }}
                 </strong>
               </div>
 
               <div class="detail-item">
                 <span class="detail-label">AMOUNT</span>
-                <strong class="detail-value amount" :class="transactionType === 'income' ? 'income' : 'expense'">
+
+                <strong
+                  class="detail-value amount"
+                  :class="
+                    transactionType === 'income'
+                      ? 'income'
+                      : 'expense'
+                  "
+                >
                   {{ transactionType === 'income' ? '+' : '-' }}¥{{ formatAmount(amount) }}
                 </strong>
               </div>
 
               <div class="detail-item">
                 <span class="detail-label">CATEGORY</span>
-                <strong class="detail-value">{{ category || '未分類' }}</strong>
+                <strong class="detail-value">
+                  {{ category || '未分類' }}
+                </strong>
               </div>
 
               <div class="detail-item">
                 <span class="detail-label">PAYMENT</span>
-                <strong class="detail-value">{{ paymentMethod || '未設定' }}</strong>
+                <strong class="detail-value">
+                  {{ paymentMethod || '未設定' }}
+                </strong>
               </div>
 
               <div class="detail-item">
                 <span class="detail-label">DATE</span>
-                <strong class="detail-value">{{ date }}</strong>
+                <strong class="detail-value">
+                  {{ date }}
+                </strong>
               </div>
 
               <div class="detail-item">
                 <span class="detail-label">ACCOUNT</span>
-                <strong class="detail-value">{{ selectedAccountName }}</strong>
+                <strong class="detail-value">
+                  {{ selectedAccountName }}
+                </strong>
               </div>
             </div>
 
-            <form v-else class="transaction-form" @submit.prevent="handleSave">
+            <form
+              v-else
+              class="transaction-form"
+              @submit.prevent="handleSave"
+            >
               <div class="form-group">
                 <label>収支区分</label>
+
                 <div class="transaction-type-switch">
                   <button
                     type="button"
                     class="type-option income"
-                    :class="{ active: form.transaction_type === 'income' }"
-                    @click="form.transaction_type = 'income'"
+                    :class="{
+                      active:
+                        form.transaction_type ===
+                        'income'
+                    }"
+                    @click="
+                      form.transaction_type = 'income'
+                    "
                   >
                     収入
                   </button>
+
                   <button
                     type="button"
                     class="type-option expense"
-                    :class="{ active: form.transaction_type === 'expense' }"
-                    @click="form.transaction_type = 'expense'"
+                    :class="{
+                      active:
+                        form.transaction_type ===
+                        'expense'
+                    }"
+                    @click="
+                      form.transaction_type = 'expense'
+                    "
                   >
                     支出
                   </button>
@@ -113,14 +216,20 @@
                 <label for="transaction-category">カテゴリ</label>
 
                 <input
-                  v-if="form.transaction_type === 'income'"
+                  v-if="
+                    form.transaction_type ===
+                    'income'
+                  "
                   id="transaction-category"
                   value="収入"
                   readonly
                 >
 
                 <select
-                  v-else-if="form.transaction_type === 'expense'"
+                  v-else-if="
+                    form.transaction_type ===
+                    'expense'
+                  "
                   id="transaction-category"
                   v-model="form.category"
                 >
@@ -149,6 +258,7 @@
 
               <div class="form-group">
                 <label for="transaction-amount">金額</label>
+
                 <input
                   id="transaction-amount"
                   v-model.number="form.amount"
@@ -161,6 +271,7 @@
 
               <div class="form-group">
                 <label for="transaction-date">日付</label>
+
                 <input
                   id="transaction-date"
                   v-model="form.date"
@@ -168,22 +279,37 @@
                 >
               </div>
 
-              <div v-if="form.transaction_type === 'income'" class="form-group">
+              <div
+                v-if="form.transaction_type === 'income'"
+                class="form-group"
+              >
                 <label>入金先</label>
+
                 <div class="income-source-switch">
                   <button
                     type="button"
                     class="source-option"
-                    :class="{ active: incomeSource === 'cash' }"
-                    @click="setIncomeSource('cash')"
+                    :class="{
+                      active:
+                        incomeSource === 'cash'
+                    }"
+                    @click="
+                      setIncomeSource('cash')
+                    "
                   >
                     現金
                   </button>
+
                   <button
                     type="button"
                     class="source-option"
-                    :class="{ active: incomeSource === 'account' }"
-                    @click="setIncomeSource('account')"
+                    :class="{
+                      active:
+                        incomeSource === 'account'
+                    }"
+                    @click="
+                      setIncomeSource('account')
+                    "
                   >
                     口座
                   </button>
@@ -191,27 +317,54 @@
               </div>
 
               <div
-                v-if="form.transaction_type === 'income' && incomeSource === 'account'"
+                v-if="
+                  form.transaction_type === 'income' &&
+                  incomeSource === 'account'
+                "
                 class="form-group"
               >
                 <label for="income-account">口座</label>
+
                 <div class="account-select-row">
-                  <select id="income-account" v-model="selectedAccountId">
+                  <select
+                    id="income-account"
+                    v-model="selectedAccountId"
+                  >
                     <option value="">選択してください</option>
-                    <option v-for="account in accounts" :key="account.id" :value="account.id">
-                      {{ account.bank?.name || '銀行' }} - {{ account.account_number }}
+
+                    <option
+                      v-for="account in accounts"
+                      :key="account.id"
+                      :value="account.id"
+                    >
+                      {{ account.bank?.name || '銀行' }} -
+                      {{ account.account_number }}
                       (残高: {{ formatAmount(account.balance) }}円)
                     </option>
                   </select>
-                  <button type="button" class="account-open-button" @click="emit('open-account')">
+
+                  <button
+                    type="button"
+                    class="account-open-button"
+                    @click="emit('open-account')"
+                  >
                     口座登録
                   </button>
                 </div>
               </div>
 
-              <div v-if="form.transaction_type === 'expense'" class="form-group">
-                <label for="transaction-payment">支払方法</label>
-                <select id="transaction-payment" v-model="form.payment_method">
+              <div
+                v-if="form.transaction_type === 'expense'"
+                class="form-group"
+              >
+                <label for="transaction-payment">
+                  支払方法
+                </label>
+
+                <select
+                  id="transaction-payment"
+                  v-model="form.payment_method"
+                >
                   <option value="">選択してください</option>
                   <option value="現金">現金</option>
                   <option value="クレジット">クレジット</option>
@@ -220,19 +373,37 @@
               </div>
 
               <div
-                v-if="form.transaction_type === 'expense' && form.payment_method === '引き落とし'"
+                v-if="
+                  form.transaction_type === 'expense' &&
+                  form.payment_method === '引き落とし'
+                "
                 class="form-group"
               >
                 <label for="expense-account">口座</label>
+
                 <div class="account-select-row">
-                  <select id="expense-account" v-model="selectedAccountId">
+                  <select
+                    id="expense-account"
+                    v-model="selectedAccountId"
+                  >
                     <option value="">選択してください</option>
-                    <option v-for="account in accounts" :key="account.id" :value="account.id">
-                      {{ account.bank?.name || '銀行' }} - {{ account.account_number }}
+
+                    <option
+                      v-for="account in accounts"
+                      :key="account.id"
+                      :value="account.id"
+                    >
+                      {{ account.bank?.name || '銀行' }} -
+                      {{ account.account_number }}
                       (残高: {{ formatAmount(account.balance) }}円)
                     </option>
                   </select>
-                  <button type="button" class="account-open-button" @click="emit('open-account')">
+
+                  <button
+                    type="button"
+                    class="account-open-button"
+                    @click="emit('open-account')"
+                  >
                     口座登録
                   </button>
                 </div>
@@ -242,23 +413,49 @@
 
           <div class="modal-footer">
             <template v-if="isEditMode">
-              <button type="button" class="secondary-button" @click="cancelEdit">
+              <button
+                type="button"
+                class="secondary-button"
+                @click="cancelEdit"
+              >
                 キャンセル
               </button>
-              <button type="button" class="primary-button" @click="handleSave">
+
+              <button
+                type="button"
+                class="primary-button"
+                @click="handleSave"
+              >
                 {{ editingId ? '保存' : '追加' }}
               </button>
             </template>
 
             <template v-else>
-              <button v-if="editingId" type="button" class="danger-button" @click="handleDelete">
+              <button
+                v-if="editingId"
+                type="button"
+                class="danger-button"
+                @click="handleDelete"
+              >
                 削除
               </button>
+
               <div class="footer-spacer"></div>
-              <button v-if="editingId" type="button" class="primary-button" @click="emit('start-edit')">
+
+              <button
+                v-if="editingId"
+                type="button"
+                class="primary-button"
+                @click="emit('start-edit')"
+              >
                 編集
               </button>
-              <button type="button" class="secondary-button" @click="closeModal">
+
+              <button
+                type="button"
+                class="secondary-button"
+                @click="closeModal"
+              >
                 閉じる
               </button>
             </template>
@@ -372,23 +569,29 @@ const syncForm = () => {
   }
 
   form.transaction_type = transaction.transaction_type
-  form.category = transaction.transaction_type === 'income'
-    ? '収入'
-    : transaction.category ?? ''
+  form.category =
+    transaction.transaction_type === 'income'
+      ? '収入'
+      : transaction.category ?? ''
   form.amount = Number(transaction.amount ?? 0)
   form.date = transaction.date || props.selectedDate
   form.payment_method = transaction.payment_method ?? ''
   selectedAccountId.value = transaction.account_id ?? ''
 
   if (transaction.transaction_type === 'income') {
-    incomeSource.value = transaction.account_id ? 'account' : 'cash'
+    incomeSource.value =
+      transaction.account_id ? 'account' : 'cash'
   } else {
     incomeSource.value = 'cash'
   }
 }
 
 watch(
-  () => [props.transaction, props.selectedDate, props.isEditMode],
+  () => [
+    props.transaction,
+    props.selectedDate,
+    props.isEditMode
+  ],
   () => syncForm(),
   { immediate: true }
 )
@@ -425,74 +628,135 @@ watch(
 watch(
   () => form.payment_method,
   paymentMethod => {
-    if (form.transaction_type === 'expense' && paymentMethod !== '引き落とし') {
+    if (
+      form.transaction_type === 'expense' &&
+      paymentMethod !== '引き落とし'
+    ) {
       selectedAccountId.value = ''
     }
   }
 )
 
 const transactionType = computed(() => {
-  return props.transaction?.transaction_type ?? form.transaction_type
+  return (
+    props.transaction?.transaction_type ??
+    form.transaction_type
+  )
 })
 
 const transactionTypeLabel = computed(() => {
-  return transactionType.value === 'income' ? '収入' : '支出'
+  return transactionType.value === 'income'
+    ? '収入'
+    : '支出'
 })
 
 const amount = computed(() => {
-  return Number(props.transaction?.amount ?? form.amount ?? 0)
+  return Number(
+    props.transaction?.amount ??
+    form.amount ??
+    0
+  )
 })
 
 const category = computed(() => {
-  return props.transaction?.category ?? form.category ?? ''
+  return (
+    props.transaction?.category ??
+    form.category ??
+    ''
+  )
 })
 
 const paymentMethod = computed(() => {
-  return props.transaction?.payment_method ?? form.payment_method ?? ''
+  return (
+    props.transaction?.payment_method ??
+    form.payment_method ??
+    ''
+  )
 })
 
 const date = computed(() => {
-  return props.transaction?.date ?? form.date ?? props.selectedDate
+  return (
+    props.transaction?.date ??
+    form.date ??
+    props.selectedDate
+  )
 })
 
 const registeredUserName = computed(() => {
-  return props.transaction?.user?.username ?? props.transaction?.user_name ?? '不明'
+  return (
+    props.transaction?.user?.username ??
+    props.transaction?.user_name ??
+    '不明'
+  )
+})
+
+const registeredUserPublicId = computed(() => {
+  return (
+    props.transaction?.user?.public_id ??
+    '-'
+  )
 })
 
 const registeredUserDisplayName = computed(() => {
-  return props.transaction?.user_display_name ?? registeredUserName.value
+  return (
+    props.transaction?.user_display_name ??
+    registeredUserName.value
+  )
 })
 
 const registeredUserIcon = computed(() => {
-  return props.transaction?.user?.avatar_url ?? props.transaction?.user_icon_url ?? null
+  return (
+    props.transaction?.user?.avatar_url ??
+    props.transaction?.user_icon_url ??
+    null
+  )
 })
 
 const registeredUserBackground = computed(() => {
-  return props.transaction?.user?.background_image_url ?? props.transaction?.user_background_url ?? null
+  return (
+    props.transaction
+      ?.user
+      ?.background_image_url ??
+    props.transaction
+      ?.user_background_url ??
+    null
+  )
 })
 
 const userMonthlyIncome = computed(() => {
-  return Number(props.transaction?.user_monthly_income ?? 0)
+  return Number(
+    props.transaction?.user_monthly_income ??
+    0
+  )
 })
 
 const userMonthlyExpense = computed(() => {
-  return Number(props.transaction?.user_monthly_expense ?? 0)
+  return Number(
+    props.transaction?.user_monthly_expense ??
+    0
+  )
 })
 
 const userMonthlyBalance = computed(() => {
   return Number(
     props.transaction?.user_monthly_balance ??
-    (userMonthlyIncome.value - userMonthlyExpense.value)
+    (
+      userMonthlyIncome.value -
+      userMonthlyExpense.value
+    )
   )
 })
 
 const registeredUserIconStyle = computed(() => {
   if (!registeredUserIcon.value) {
-    return { background: '#eaf8fb' }
+    return {
+      background: '#eaf8fb'
+    }
   }
 
   return {
-    backgroundImage: `url("${registeredUserIcon.value}")`,
+    backgroundImage:
+      `url("${registeredUserIcon.value}")`,
     backgroundPosition: 'center',
     backgroundSize: 'cover',
     backgroundRepeat: 'no-repeat'
@@ -502,12 +766,14 @@ const registeredUserIconStyle = computed(() => {
 const registeredUserBackgroundStyle = computed(() => {
   if (!registeredUserBackground.value) {
     return {
-      background: 'linear-gradient(135deg, #dff6fb, #eef8fa)'
+      background:
+        'linear-gradient(135deg, #dff6fb, #eef8fa)'
     }
   }
 
   return {
-    backgroundImage: `url("${registeredUserBackground.value}")`,
+    backgroundImage:
+      `url("${registeredUserBackground.value}")`,
     backgroundPosition: 'center',
     backgroundSize: 'cover',
     backgroundRepeat: 'no-repeat'
@@ -515,15 +781,20 @@ const registeredUserBackgroundStyle = computed(() => {
 })
 
 const selectedAccountName = computed(() => {
-  const accountId = props.transaction?.account_id ?? selectedAccountId.value
+  const accountId =
+    props.transaction?.account_id ??
+    selectedAccountId.value
 
   if (!accountId) {
     return '未設定'
   }
 
-  const account = props.accounts.find(
-    item => Number(item.id) === Number(accountId)
-  )
+  const account =
+    props.accounts.find(
+      item =>
+        Number(item.id) ===
+        Number(accountId)
+    )
 
   if (!account) {
     return '不明'
@@ -532,7 +803,9 @@ const selectedAccountName = computed(() => {
   return `${account.bank.name} / ${account.account_number}`
 })
 
-const setIncomeSource = (source: 'cash' | 'account') => {
+const setIncomeSource = (
+  source: 'cash' | 'account'
+) => {
   incomeSource.value = source
 
   if (source === 'cash') {
@@ -540,18 +813,28 @@ const setIncomeSource = (source: 'cash' | 'account') => {
     return
   }
 
-  if (props.accounts.length > 0 && selectedAccountId.value === '') {
-    selectedAccountId.value = props.accounts[0].id
+  if (
+    props.accounts.length > 0 &&
+    selectedAccountId.value === ''
+  ) {
+    selectedAccountId.value =
+      props.accounts[0].id
   }
 }
 
 const validateForm = () => {
-  if (form.transaction_type !== 'income' && form.transaction_type !== 'expense') {
+  if (
+    form.transaction_type !== 'income' &&
+    form.transaction_type !== 'expense'
+  ) {
     alert('収支種別を選択してください')
     return false
   }
 
-  if (!form.amount || Number(form.amount) <= 0) {
+  if (
+    !form.amount ||
+    Number(form.amount) <= 0
+  ) {
     alert('金額を入力してください')
     return false
   }
@@ -565,18 +848,27 @@ const validateForm = () => {
     form.category = '収入'
     form.payment_method = '-'
 
-    if (incomeSource.value === 'account' && !selectedAccountId.value) {
+    if (
+      incomeSource.value === 'account' &&
+      !selectedAccountId.value
+    ) {
       alert('口座を選択してください')
       return false
     }
   }
 
-  if (form.transaction_type === 'expense' && !form.category) {
+  if (
+    form.transaction_type === 'expense' &&
+    !form.category
+  ) {
     alert('カテゴリーを選択してください')
     return false
   }
 
-  if (form.transaction_type === 'expense' && !form.payment_method) {
+  if (
+    form.transaction_type === 'expense' &&
+    !form.payment_method
+  ) {
     alert('支払方法を選択してください')
     return false
   }
@@ -593,16 +885,27 @@ const validateForm = () => {
   return true
 }
 
-const formatAmount = (value: number | string) => {
-  return Number(value || 0).toLocaleString('ja-JP')
+const formatAmount = (
+  value: number | string
+) => {
+  return Number(
+    value || 0
+  ).toLocaleString('ja-JP')
 }
 
-const formatMonthlyAmount = (value: number | string) => {
-  return Math.abs(Number(value || 0)).toLocaleString('ja-JP')
+const formatMonthlyAmount = (
+  value: number | string
+) => {
+  return Math.abs(
+    Number(value || 0)
+  ).toLocaleString('ja-JP')
 }
 
 const closeModal = () => {
-  emit('update:modelValue', false)
+  emit(
+    'update:modelValue',
+    false
+  )
 }
 
 const cancelEdit = () => {
@@ -615,7 +918,10 @@ const handleSave = () => {
     return
   }
 
-  if (form.transaction_type !== 'income' && form.transaction_type !== 'expense') {
+  if (
+    form.transaction_type !== 'income' &&
+    form.transaction_type !== 'expense'
+  ) {
     return
   }
 
@@ -625,28 +931,45 @@ const handleSave = () => {
     form.transaction_type === 'income' &&
     incomeSource.value === 'account'
   ) {
-    accountId = selectedAccountId.value
-      ? Number(selectedAccountId.value)
-      : null
+    accountId =
+      selectedAccountId.value
+        ? Number(
+            selectedAccountId.value
+          )
+        : null
   }
 
   if (
     form.transaction_type === 'expense' &&
     form.payment_method === '引き落とし'
   ) {
-    accountId = selectedAccountId.value
-      ? Number(selectedAccountId.value)
-      : null
+    accountId =
+      selectedAccountId.value
+        ? Number(
+            selectedAccountId.value
+          )
+        : null
   }
 
-  emit('save', {
-    transaction_type: form.transaction_type,
-    category: form.category,
-    amount: Number(form.amount),
-    date: form.date,
-    payment_method: form.payment_method,
-    account_id: accountId
-  })
+  emit(
+    'save',
+    {
+      transaction_type:
+        form.transaction_type,
+      category:
+        form.category,
+      amount:
+        Number(
+          form.amount
+        ),
+      date:
+        form.date,
+      payment_method:
+        form.payment_method,
+      account_id:
+        accountId
+    }
+  )
 }
 
 const handleDelete = () => {
@@ -674,7 +997,9 @@ const handleDelete = () => {
   border: 1px solid #c8e0e7;
   border-radius: 20px;
   background: #fff;
-  box-shadow: 0 30px 70px rgba(23, 49, 61, 0.2), 0 8px 20px rgba(23, 49, 61, 0.1);
+  box-shadow:
+    0 30px 70px rgba(23, 49, 61, 0.2),
+    0 8px 20px rgba(23, 49, 61, 0.1);
 }
 
 .modal-header {
@@ -741,7 +1066,12 @@ const handleDelete = () => {
 .registered-user-cover-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(24, 52, 63, 0.02), rgba(24, 52, 63, 0.2));
+  background:
+    linear-gradient(
+      180deg,
+      rgba(24, 52, 63, 0.02),
+      rgba(24, 52, 63, 0.2)
+    );
 }
 
 .registered-user-avatar {
@@ -756,7 +1086,8 @@ const handleDelete = () => {
   border: 4px solid #fff;
   border-radius: 50%;
   background: #eaf8fb;
-  box-shadow: 0 5px 14px rgba(23, 49, 61, 0.16);
+  box-shadow:
+    0 5px 14px rgba(23, 49, 61, 0.16);
 }
 
 .registered-user-avatar img {
@@ -933,7 +1264,8 @@ const handleDelete = () => {
 .form-group input:focus,
 .form-group select:focus {
   border-color: #28afd0;
-  box-shadow: 0 0 0 3px rgba(40, 175, 208, 0.1);
+  box-shadow:
+    0 0 0 3px rgba(40, 175, 208, 0.1);
 }
 
 .form-group input:disabled,
@@ -962,7 +1294,10 @@ const handleDelete = () => {
   font-size: 14px;
   font-weight: 800;
   cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .type-option.income {
@@ -976,7 +1311,8 @@ const handleDelete = () => {
 .type-option.income.active,
 .type-option.expense.active {
   background: #fff;
-  box-shadow: 0 2px 8px rgba(20, 30, 55, 0.08);
+  box-shadow:
+    0 2px 8px rgba(20, 30, 55, 0.08);
 }
 
 .type-option.income.active {
@@ -994,7 +1330,8 @@ const handleDelete = () => {
 .source-option.active {
   background: #fff;
   color: #179bbd;
-  box-shadow: 0 2px 8px rgba(20, 30, 55, 0.08);
+  box-shadow:
+    0 2px 8px rgba(20, 30, 55, 0.08);
 }
 
 .account-select-row {
