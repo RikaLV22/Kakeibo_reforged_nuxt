@@ -101,7 +101,7 @@
         </div>
         <strong>{{ apiShortLabel(api.name) }}</strong>
         <span class="node-full-name">
-          {{ api.name.replace(' API', '') }}
+          {{ api.name?.replace(' API', '') ?? 'UNKNOWN API' }}
         </span>
         <div class="node-response">
           <span>
@@ -538,7 +538,7 @@ const hudNodeY = (index: number) => {
   return Math.round((hudNodePositions[index]?.y ?? 50) * 7)
 }
 
-const apiShortLabel = (name: string) => {
+const apiShortLabel = (name?: string) => {
   const labels: Record<string, string> = {
     'User API': 'USER',
     'Organization API': 'ORGANIZATION',
@@ -549,6 +549,10 @@ const apiShortLabel = (name: string) => {
     'Organization Account API': 'ORG ACCOUNT',
     'Bank API': 'BANK',
     'AI API': 'AI'
+  }
+
+  if (!name) {
+    return 'UNKNOWN API'
   }
 
   return labels[name] ?? name.replace(/ API$/, '').toUpperCase()

@@ -1,4 +1,3 @@
-```vue
 <template>
   <div class="chat-card">
     <div class="card-header">
@@ -8,9 +7,19 @@
       </div>
 
       <div class="chat-header-actions">
-        <span class="bot-status">
+        <span
+          class="bot-status"
+          :class="{
+            offline: isChatOffline
+          }"
+        >
           <span class="status-dot"></span>
-          ONLINE
+
+          {{
+            isChatOffline
+              ? 'OFFLINE'
+              : 'ONLINE'
+          }}
         </span>
 
         <button
@@ -55,7 +64,11 @@
       <input
         v-model="chatInput"
         type="text"
-        :placeholder="placeholder"
+        :placeholder="
+          isChatOffline
+            ? 'チャットサーバーはメンテナンス中です'
+            : placeholder
+        "
         @keyup.enter="sendMessage"
       />
 
@@ -70,7 +83,9 @@
         {{
           isSending
             ? '送信中...'
-            : '送信'
+            : isChatOffline
+              ? 'メンテナンス中'
+              : '送信'
         }}
       </button>
     </div>
@@ -88,9 +103,19 @@
           </div>
 
           <div class="chat-modal-header-actions">
-            <span class="bot-status">
+            <span
+              class="bot-status"
+              :class="{
+                offline: isChatOffline
+              }"
+            >
               <span class="status-dot"></span>
-              ONLINE
+
+              {{
+                isChatOffline
+                  ? 'OFFLINE'
+                  : 'ONLINE'
+              }}
             </span>
 
             <button
@@ -135,7 +160,11 @@
           <input
             v-model="chatInput"
             type="text"
-            :placeholder="placeholder"
+            :placeholder="
+              isChatOffline
+                ? 'チャットサーバーはメンテナンス中です'
+                : placeholder
+            "
             @keyup.enter="sendMessage"
           />
 
@@ -150,7 +179,9 @@
             {{
               isSending
                 ? '送信中...'
-                : '送信'
+                : isChatOffline
+                  ? 'メンテナンス中'
+                  : '送信'
             }}
           </button>
         </div>
@@ -163,12 +194,22 @@
 import {
   nextTick,
   onMounted,
+  onUnmounted,
   ref
 } from 'vue'
 
 interface ChatMessage {
   role: 'user' | 'bot'
   text: string
+}
+
+interface ChatStatusResponse {
+  name: string
+  enabled: boolean
+  status: 'online' | 'offline'
+  maintenance: boolean
+  maintenance_message: string | null
+  updated_at: string | null
 }
 
 const props = defineProps<{
@@ -186,6 +227,14 @@ const chatInput =
 
 const isSending =
   ref(false)
+
+const isChatOffline =
+  ref(false)
+
+const chatStatusTimer =
+  ref<ReturnType<
+    typeof setInterval
+  > | null>(null)
 
 const messages =
   ref<ChatMessage[]>([
@@ -264,6 +313,38 @@ const scrollAllChatsToBottom =
     }
   }
 
+const fetchChatStatus =
+  async () => {
+    try {
+      const response =
+        await $api.get<ChatStatusResponse>(
+          '/health/ai/status'
+        )
+
+      isChatOffline.value =
+        response.data.maintenance
+    } catch (
+      error
+    ) {
+      console.error(
+        'AIメンテナンス状態の取得に失敗:',
+        error
+      )
+    }
+  }
+
+const addMaintenanceMessage =
+  async () => {
+    messages.value.push({
+      role: 'bot',
+      text:
+        '現在チャットサーバーをメンテナンス中です。\n' +
+        'しばらくお待ちください。'
+    })
+
+    await scrollAllChatsToBottom()
+  }
+
 const openChatModal =
   async () => {
     showChatModal.value =
@@ -300,6 +381,20 @@ const sendMessage =
       return
     }
 
+    /*
+     * AI APIがメンテナンス中なら
+     * 実際のAPIリクエストは送信しない
+     */
+    if (
+      isChatOffline.value
+    ) {
+      chatInput.value = ''
+
+      await addMaintenanceMessage()
+
+      return
+    }
+
     messages.value.push({
       role: 'user',
       text: message
@@ -324,6 +419,10 @@ const sendMessage =
         message
       }
 
+      /*
+       * 組織チャットの場合だけ
+       * selectedOrganizationIdを送信
+       */
       if (
         props.apiPath ===
           '/chat' &&
@@ -355,6 +454,25 @@ const sendMessage =
         error
       )
 
+      /*
+       * AI APIメンテナンス中
+       *
+       * 画面の状態取得より先に
+       * POSTが503になった場合も
+       * ここでOFFLINEへ切り替える
+       */
+      if (
+        error?.response?.status ===
+        503
+      ) {
+        isChatOffline.value =
+          true
+
+        await addMaintenanceMessage()
+
+        return
+      }
+
       messages.value.push({
         role: 'bot',
         text:
@@ -371,9 +489,36 @@ const sendMessage =
 
 onMounted(
   async () => {
+    /*
+     * 初回のAIメンテナンス状態確認
+     */
+    await fetchChatStatus()
+
     await scrollAllChatsToBottom()
+
+    /*
+     * 10秒ごとにメンテナンス状態を確認
+     */
+    chatStatusTimer.value =
+      setInterval(
+        fetchChatStatus,
+        10000
+      )
   }
 )
+
+onUnmounted(() => {
+  if (
+    chatStatusTimer.value
+  ) {
+    clearInterval(
+      chatStatusTimer.value
+    )
+
+    chatStatusTimer.value =
+      null
+  }
+})
 </script>
 
 <style scoped>
@@ -436,6 +581,12 @@ onMounted(
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.04em;
+  transition: 0.2s ease;
+}
+
+.bot-status.offline {
+  background: #fef2f2;
+  color: #dc2626;
 }
 
 .status-dot {
@@ -443,6 +594,11 @@ onMounted(
   height: 6px;
   border-radius: 50%;
   background: #22c55e;
+  transition: 0.2s ease;
+}
+
+.bot-status.offline .status-dot {
+  background: #ef4444;
 }
 
 .chat-expand-button {
@@ -598,6 +754,12 @@ onMounted(
 .chat-input-area input::placeholder,
 .chat-modal-input-area input::placeholder {
   color: #a0a8b5;
+}
+
+.chat-input-area input:disabled,
+.chat-modal-input-area input:disabled {
+  background: #f5f6f8;
+  cursor: not-allowed;
 }
 
 .send-button {
