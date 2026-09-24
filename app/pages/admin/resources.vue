@@ -6,6 +6,7 @@
         <h1>リソース管理</h1>
         <p class="description">PrometheusからシステムおよびAPIの稼働状況を取得します</p>
       </div>
+
       <div class="header-status" :class="prometheusStatusClass">
         <span class="status-dot"></span>
         {{ prometheusStatusLabel }}
@@ -18,16 +19,19 @@
         <strong>{{ formatPercent(resources?.system.cpu_usage_percent) }}</strong>
         <small>NODE EXPORTER</small>
       </div>
+
       <div class="metric-card">
         <span class="metric-label">MEMORY USAGE</span>
         <strong>{{ formatPercent(resources?.system.memory_usage_percent) }}</strong>
         <small>NODE EXPORTER</small>
       </div>
+
       <div class="metric-card">
         <span class="metric-label">MONITORED TARGETS</span>
         <strong>{{ onlineTargetCount }} / {{ resources?.targets.length ?? 0 }}</strong>
         <small>PROMETHEUS TARGETS</small>
       </div>
+
       <div class="metric-card">
         <span class="metric-label">API FEATURES</span>
         <strong>{{ resources?.api_requests_per_second.length ?? 0 }}</strong>
@@ -40,8 +44,11 @@
         <div>
           <p class="panel-eyebrow">RESOURCE HISTORY</p>
           <h2>過去1時間のリソース推移</h2>
-          <p class="history-description">Prometheusのquery_rangeから取得した履歴を表示します</p>
+          <p class="history-description">
+            Prometheusのquery_rangeから取得した履歴を表示します
+          </p>
         </div>
+
         <div class="history-period">LAST 1 HOUR</div>
       </div>
 
@@ -57,8 +64,10 @@
                 <p class="chart-eyebrow">SYSTEM RESOURCE</p>
                 <h3>CPU使用率</h3>
               </div>
+
               <span class="chart-unit">%</span>
             </div>
+
             <ClientOnly>
               <VueApexCharts
                 type="area"
@@ -66,6 +75,7 @@
                 :options="cpuChartOptions"
                 :series="cpuChartSeries"
               />
+
               <template #fallback>
                 <div class="chart-loading">グラフを読み込んでいます...</div>
               </template>
@@ -78,8 +88,10 @@
                 <p class="chart-eyebrow">SYSTEM RESOURCE</p>
                 <h3>メモリ使用率</h3>
               </div>
+
               <span class="chart-unit">%</span>
             </div>
+
             <ClientOnly>
               <VueApexCharts
                 type="area"
@@ -87,6 +99,7 @@
                 :options="memoryChartOptions"
                 :series="memoryChartSeries"
               />
+
               <template #fallback>
                 <div class="chart-loading">グラフを読み込んでいます...</div>
               </template>
@@ -100,8 +113,10 @@
               <p class="chart-eyebrow">API LOAD</p>
               <h3>APIリクエスト速度の推移</h3>
             </div>
+
             <span class="chart-unit">req/s</span>
           </div>
+
           <ClientOnly>
             <VueApexCharts
               type="line"
@@ -109,6 +124,7 @@
               :options="apiRequestChartOptions"
               :series="apiRequestChartSeries"
             />
+
             <template #fallback>
               <div class="chart-loading">グラフを読み込んでいます...</div>
             </template>
@@ -121,8 +137,10 @@
               <p class="chart-eyebrow">RESPONSE TIME</p>
               <h3>API平均応答時間の推移</h3>
             </div>
+
             <span class="chart-unit">ms</span>
           </div>
+
           <ClientOnly>
             <VueApexCharts
               type="line"
@@ -130,6 +148,7 @@
               :options="apiResponseChartOptions"
               :series="apiResponseChartSeries"
             />
+
             <template #fallback>
               <div class="chart-loading">グラフを読み込んでいます...</div>
             </template>
@@ -142,8 +161,10 @@
               <p class="chart-eyebrow">API LOAD / 5 SEC</p>
               <h3>APIごとの5秒間リクエスト数の推移</h3>
             </div>
+
             <span class="chart-unit">requests / 5s</span>
           </div>
+
           <ClientOnly>
             <VueApexCharts
               type="line"
@@ -151,6 +172,7 @@
               :options="apiRequests5sChartOptions"
               :series="apiRequests5sChartSeries"
             />
+
             <template #fallback>
               <div class="chart-loading">グラフを読み込んでいます...</div>
             </template>
@@ -159,12 +181,101 @@
       </template>
     </section>
 
+    <section class="history-section mysql-section">
+      <div class="history-header">
+        <div>
+          <p class="panel-eyebrow">MYSQL MONITORING</p>
+          <h2>MySQLリソース推移</h2>
+          <p class="history-description">
+            mysqld_exporterから取得したMySQLの稼働状況を表示します
+          </p>
+        </div>
+
+        <div class="history-period">MYSQL :3306</div>
+      </div>
+
+      <div class="chart-grid">
+        <div class="chart-panel">
+          <div class="chart-header">
+            <div>
+              <p class="chart-eyebrow">MYSQL CONNECTIONS</p>
+              <h3>MySQL接続数</h3>
+            </div>
+
+            <span class="chart-unit">connections</span>
+          </div>
+
+          <ClientOnly>
+            <VueApexCharts
+              type="area"
+              height="320"
+              :options="mysqlConnectionsChartOptions"
+              :series="mysqlConnectionsChartSeries"
+            />
+
+            <template #fallback>
+              <div class="chart-loading">グラフを読み込んでいます...</div>
+            </template>
+          </ClientOnly>
+        </div>
+
+        <div class="chart-panel">
+          <div class="chart-header">
+            <div>
+              <p class="chart-eyebrow">MYSQL QUERIES</p>
+              <h3>クエリ処理速度</h3>
+            </div>
+
+            <span class="chart-unit">queries / sec</span>
+          </div>
+
+          <ClientOnly>
+            <VueApexCharts
+              type="area"
+              height="320"
+              :options="mysqlQueriesChartOptions"
+              :series="mysqlQueriesChartSeries"
+            />
+
+            <template #fallback>
+              <div class="chart-loading">グラフを読み込んでいます...</div>
+            </template>
+          </ClientOnly>
+        </div>
+      </div>
+
+      <div class="chart-panel chart-panel-wide">
+        <div class="chart-header">
+          <div>
+            <p class="chart-eyebrow">INNODB BUFFER POOL</p>
+            <h3>InnoDB Buffer Pool Pages</h3>
+          </div>
+
+          <span class="chart-unit">pages</span>
+        </div>
+
+        <ClientOnly>
+          <VueApexCharts
+            type="line"
+            height="380"
+            :options="mysqlInnoDBBufferPoolChartOptions"
+            :series="mysqlInnoDBBufferPoolChartSeries"
+          />
+
+          <template #fallback>
+            <div class="chart-loading">グラフを読み込んでいます...</div>
+          </template>
+        </ClientOnly>
+      </div>
+    </section>
+
     <section class="panel">
       <div class="panel-header">
         <div>
           <p class="panel-eyebrow">INFRASTRUCTURE</p>
           <h2>監視対象</h2>
         </div>
+
         <button
           type="button"
           class="refresh-button"
@@ -187,13 +298,21 @@
           class="target-row"
         >
           <div class="target-main">
-            <span class="target-indicator" :class="{ online: target.up }"></span>
+            <span
+              class="target-indicator"
+              :class="{ online: target.up }"
+            ></span>
+
             <div>
               <strong>{{ target.job }}</strong>
               <small>{{ target.instance }}</small>
             </div>
           </div>
-          <span class="target-status" :class="{ online: target.up }">
+
+          <span
+            class="target-status"
+            :class="{ online: target.up }"
+          >
             {{ target.up ? 'UP' : 'DOWN' }}
           </span>
         </div>
@@ -209,7 +328,10 @@
           </div>
         </div>
 
-        <div v-if="apiRequestRows.length === 0" class="empty-state">
+        <div
+          v-if="apiRequestRows.length === 0"
+          class="empty-state"
+        >
           <span>現在、表示可能なAPIデータがありません</span>
         </div>
 
@@ -223,6 +345,7 @@
               <strong>{{ item.feature }}</strong>
               <small>REQUEST RATE</small>
             </div>
+
             <strong class="api-value">
               {{ item.requests_per_second.toFixed(3) }}
               <span>req/s</span>
@@ -239,7 +362,10 @@
           </div>
         </div>
 
-        <div v-if="apiResponseRows.length === 0" class="empty-state">
+        <div
+          v-if="apiResponseRows.length === 0"
+          class="empty-state"
+        >
           <span>現在、表示可能なAPIデータがありません</span>
         </div>
 
@@ -253,6 +379,7 @@
               <strong>{{ item.feature }}</strong>
               <small>AVERAGE RESPONSE</small>
             </div>
+
             <strong class="api-value">
               {{ item.response_time_ms.toFixed(2) }}
               <span>ms</span>
@@ -268,10 +395,14 @@
           <p class="panel-eyebrow">API CONCURRENCY</p>
           <h2>APIごとの処理中リクエスト数</h2>
         </div>
+
         <span class="history-period">CURRENT</span>
       </div>
 
-      <div v-if="apiInProgressRows.length === 0" class="empty-state">
+      <div
+        v-if="apiInProgressRows.length === 0"
+        class="empty-state"
+      >
         <span>現在、表示可能な処理中リクエストがありません</span>
       </div>
 
@@ -285,6 +416,7 @@
             <strong>{{ item.feature }}</strong>
             <small>REQUESTS IN PROGRESS</small>
           </div>
+
           <strong
             class="api-value"
             :class="{ active: item.requests_in_progress > 0 }"
@@ -299,7 +431,9 @@
     <footer class="page-footer">
       <span>LAST UPDATE</span>
       <strong>{{ formattedUpdatedAt }}</strong>
+
       <span class="separator">/</span>
+
       <span>AUTO REFRESH</span>
       <strong>10s</strong>
     </footer>
@@ -352,27 +486,53 @@ interface HistorySeries {
   values: HistoryPoint[]
 }
 
+interface MysqlHistorySeries {
+  state?: string
+  metric?: Record<string, string>
+  values: HistoryPoint[]
+}
+
+interface MysqlBufferPoolPage {
+  state: string
+  pages: number
+}
+
 interface ResourceHistory {
   range?: {
     start: string
     end: string
     step: string
   }
+
   cpu?: HistoryPoint[]
   memory?: HistoryPoint[]
+
   api_requests?: HistorySeries[]
   api_response_time?: HistorySeries[]
   api_requests_5s?: HistorySeries[]
   api_in_progress?: HistorySeries[]
+
+  mysql_connections?: HistoryPoint[]
+  mysql_queries?: HistoryPoint[]
+  mysql_innodb_buffer_pool?: MysqlHistorySeries[]
 }
 
 interface ResourceResponse {
   generated_at: string
+
   prometheus: {
     status: string
     error?: string
   }
+
   system: ResourceSystem
+
+  mysql: {
+    connections: number | null
+    queries_per_second: number | null
+    innodb_buffer_pool_pages: MysqlBufferPoolPage[]
+  }
+
   api_requests_per_second: ApiRequestRate[]
   api_average_response_ms: ApiResponseTime[]
   api_requests_in_progress: ApiRequestsInProgress[]
@@ -399,7 +559,9 @@ const loadError = ref('')
 let refreshTimer: ReturnType<typeof setInterval> | null = null
 
 const prometheusStatusClass = computed(() => {
-  return resources.value?.prometheus.status === 'online' ? 'online' : 'offline'
+  return resources.value?.prometheus.status === 'online'
+    ? 'online'
+    : 'offline'
 })
 
 const prometheusStatusLabel = computed(() => {
@@ -432,6 +594,7 @@ const apiInProgressRows = computed(() => {
 
 const formattedUpdatedAt = computed(() => {
   const value = resources.value?.generated_at
+
   if (!value) return '--'
 
   return new Date(value).toLocaleString('ja-JP', {
@@ -445,7 +608,11 @@ const formattedUpdatedAt = computed(() => {
 })
 
 const formatPercent = (value: number | null | undefined) => {
-  if (value === null || value === undefined || !Number.isFinite(value)) {
+  if (
+    value === null ||
+    value === undefined ||
+    !Number.isFinite(value)
+  ) {
     return '--'
   }
 
@@ -476,17 +643,34 @@ const apiRequests5sHistory = computed(() => {
   return resourceHistory.value.api_requests_5s ?? []
 })
 
+const mysqlConnectionsHistory = computed(() => {
+  return resourceHistory.value.mysql_connections ?? []
+})
+
+const mysqlQueriesHistory = computed(() => {
+  return resourceHistory.value.mysql_queries ?? []
+})
+
+const mysqlInnoDBBufferPoolHistory = computed(() => {
+  return resourceHistory.value.mysql_innodb_buffer_pool ?? []
+})
+
 const hasHistoryData = computed(() => {
   return (
     cpuHistory.value.length > 0 ||
     memoryHistory.value.length > 0 ||
     apiRequestHistory.value.length > 0 ||
     apiResponseHistory.value.length > 0 ||
-    apiRequests5sHistory.value.length > 0
+    apiRequests5sHistory.value.length > 0 ||
+    mysqlConnectionsHistory.value.length > 0 ||
+    mysqlQueriesHistory.value.length > 0 ||
+    mysqlInnoDBBufferPoolHistory.value.length > 0
   )
 })
 
-const toChartPoints = (points: HistoryPoint[]): ChartPoint[] => {
+const toChartPoints = (
+  points: HistoryPoint[]
+): ChartPoint[] => {
   return points
     .filter(
       point =>
@@ -509,6 +693,12 @@ const toChartPoints = (points: HistoryPoint[]): ChartPoint[] => {
 
 const getSeriesName = (series: HistorySeries) => {
   return series.feature ?? series.metric?.feature ?? 'Other'
+}
+
+const getMysqlSeriesName = (
+  series: MysqlHistorySeries
+) => {
+  return series.state ?? series.metric?.state ?? 'Other'
 }
 
 const cpuChartSeries = computed<ChartSeries[]>(() => {
@@ -556,6 +746,34 @@ const apiRequests5sChartSeries = computed<ChartSeries[]>(() => {
     .filter(series => series.data.length > 0)
 })
 
+const mysqlConnectionsChartSeries = computed<ChartSeries[]>(() => {
+  return [
+    {
+      name: 'MySQL接続数',
+      data: toChartPoints(mysqlConnectionsHistory.value)
+    }
+  ]
+})
+
+const mysqlQueriesChartSeries = computed<ChartSeries[]>(() => {
+  return [
+    {
+      name: 'MySQL Queries / Sec',
+      data: toChartPoints(mysqlQueriesHistory.value)
+    }
+  ]
+})
+
+const mysqlInnoDBBufferPoolChartSeries =
+  computed<ChartSeries[]>(() => {
+    return mysqlInnoDBBufferPoolHistory.value
+      .map(series => ({
+        name: getMysqlSeriesName(series),
+        data: toChartPoints(series.values)
+      }))
+      .filter(series => series.data.length > 0)
+  })
+
 const baseChartOptions = (): ApexOptions => {
   return {
     chart: {
@@ -570,23 +788,28 @@ const baseChartOptions = (): ApexOptions => {
       },
       background: 'transparent'
     },
+
     dataLabels: {
       enabled: false
     },
+
     stroke: {
       curve: 'smooth',
       width: 2
     },
+
     markers: {
       size: 0,
       hover: {
         size: 5
       }
     },
+
     grid: {
       borderColor: '#dbe8ec',
       strokeDashArray: 4
     },
+
     xaxis: {
       type: 'datetime',
       range: 5 * 60 * 1000,
@@ -606,11 +829,13 @@ const baseChartOptions = (): ApexOptions => {
         color: '#dbe8ec'
       }
     },
+
     tooltip: {
       x: {
         format: 'HH:mm:ss'
       }
     },
+
     legend: {
       position: 'bottom',
       horizontalAlign: 'left',
@@ -619,6 +844,7 @@ const baseChartOptions = (): ApexOptions => {
         colors: '#456874'
       }
     },
+
     noData: {
       text: '履歴データがありません',
       style: {
@@ -632,7 +858,9 @@ const baseChartOptions = (): ApexOptions => {
 const cpuChartOptions = computed<ApexOptions>(() => {
   return {
     ...baseChartOptions(),
+
     colors: ['#22b8df'],
+
     fill: {
       type: 'gradient',
       gradient: {
@@ -642,6 +870,7 @@ const cpuChartOptions = computed<ApexOptions>(() => {
         stops: [0, 100]
       }
     },
+
     yaxis: {
       min: 0,
       max: 100,
@@ -659,7 +888,9 @@ const cpuChartOptions = computed<ApexOptions>(() => {
 const memoryChartOptions = computed<ApexOptions>(() => {
   return {
     ...baseChartOptions(),
+
     colors: ['#1597bb'],
+
     fill: {
       type: 'gradient',
       gradient: {
@@ -669,6 +900,7 @@ const memoryChartOptions = computed<ApexOptions>(() => {
         stops: [0, 100]
       }
     },
+
     yaxis: {
       min: 0,
       max: 100,
@@ -686,6 +918,7 @@ const memoryChartOptions = computed<ApexOptions>(() => {
 const apiRequestChartOptions = computed<ApexOptions>(() => {
   return {
     ...baseChartOptions(),
+
     colors: [
       '#22b8df',
       '#31b985',
@@ -697,6 +930,7 @@ const apiRequestChartOptions = computed<ApexOptions>(() => {
       '#4f7cac',
       '#8c6bb1'
     ],
+
     yaxis: {
       min: 0,
       labels: {
@@ -710,72 +944,172 @@ const apiRequestChartOptions = computed<ApexOptions>(() => {
   }
 })
 
-const apiResponseChartOptions = computed<ApexOptions>(() => {
-  return {
-    ...baseChartOptions(),
-    colors: [
-      '#e26d8b',
-      '#22b8df',
-      '#31b985',
-      '#9b7ede',
-      '#ed9f4c',
-      '#6f9eb8',
-      '#d2a649',
-      '#4f7cac',
-      '#8c6bb1'
-    ],
-    yaxis: {
-      min: 0,
-      labels: {
-        formatter: value => value.toFixed(0),
-        style: {
-          colors: '#8ca1aa',
-          fontSize: '9px'
-        }
-      }
-    }
-  }
-})
+const apiResponseChartOptions =
+  computed<ApexOptions>(() => {
+    return {
+      ...baseChartOptions(),
 
-const apiRequests5sChartOptions = computed<ApexOptions>(() => {
-  return {
-    ...baseChartOptions(),
-    colors: [
-      '#22b8df',
-      '#31b985',
-      '#9b7ede',
-      '#ed9f4c',
-      '#e26d8b',
-      '#6f9eb8',
-      '#d2a649',
-      '#4f7cac',
-      '#8c6bb1'
-    ],
-    yaxis: {
-      min: 0,
-      forceNiceScale: true,
-      labels: {
-        formatter: value => value.toFixed(0),
-        style: {
-          colors: '#8ca1aa',
-          fontSize: '9px'
+      colors: [
+        '#e26d8b',
+        '#22b8df',
+        '#31b985',
+        '#9b7ede',
+        '#ed9f4c',
+        '#6f9eb8',
+        '#d2a649',
+        '#4f7cac',
+        '#8c6bb1'
+      ],
+
+      yaxis: {
+        min: 0,
+        labels: {
+          formatter: value => value.toFixed(0),
+          style: {
+            colors: '#8ca1aa',
+            fontSize: '9px'
+          }
         }
       }
-    },
-    tooltip: {
-      y: {
-        formatter: value => `${value.toFixed(0)} requests / 5s`
+    }
+  })
+
+const apiRequests5sChartOptions =
+  computed<ApexOptions>(() => {
+    return {
+      ...baseChartOptions(),
+
+      colors: [
+        '#22b8df',
+        '#31b985',
+        '#9b7ede',
+        '#ed9f4c',
+        '#e26d8b',
+        '#6f9eb8',
+        '#d2a649',
+        '#4f7cac',
+        '#8c6bb1'
+      ],
+
+      yaxis: {
+        min: 0,
+        forceNiceScale: true,
+        labels: {
+          formatter: value => value.toFixed(0),
+          style: {
+            colors: '#8ca1aa',
+            fontSize: '9px'
+          }
+        }
+      },
+
+      tooltip: {
+        y: {
+          formatter: value =>
+            `${value.toFixed(0)} requests / 5s`
+        }
       }
     }
-  }
-})
+  })
+
+const mysqlConnectionsChartOptions =
+  computed<ApexOptions>(() => {
+    return {
+      ...baseChartOptions(),
+
+      colors: ['#22b8df'],
+
+      yaxis: {
+        min: 0,
+        forceNiceScale: true,
+        labels: {
+          formatter: value => value.toFixed(0),
+          style: {
+            colors: '#8ca1aa',
+            fontSize: '9px'
+          }
+        }
+      },
+
+      tooltip: {
+        y: {
+          formatter: value =>
+            `${value.toFixed(0)} connections`
+        }
+      }
+    }
+  })
+
+const mysqlQueriesChartOptions =
+  computed<ApexOptions>(() => {
+    return {
+      ...baseChartOptions(),
+
+      colors: ['#31b985'],
+
+      yaxis: {
+        min: 0,
+        forceNiceScale: true,
+        labels: {
+          formatter: value => value.toFixed(2),
+          style: {
+            colors: '#8ca1aa',
+            fontSize: '9px'
+          }
+        }
+      },
+
+      tooltip: {
+        y: {
+          formatter: value =>
+            `${value.toFixed(2)} queries / sec`
+        }
+      }
+    }
+  })
+
+const mysqlInnoDBBufferPoolChartOptions =
+  computed<ApexOptions>(() => {
+    return {
+      ...baseChartOptions(),
+
+      colors: [
+        '#22b8df',
+        '#31b985',
+        '#9b7ede',
+        '#ed9f4c',
+        '#e26d8b'
+      ],
+
+      yaxis: {
+        min: 0,
+        forceNiceScale: true,
+        labels: {
+          formatter: value => value.toFixed(0),
+          style: {
+            colors: '#8ca1aa',
+            fontSize: '9px'
+          }
+        }
+      },
+
+      tooltip: {
+        y: {
+          formatter: value =>
+            `${value.toFixed(0)} pages`
+        }
+      }
+    }
+  })
 
 const fetchResources = async () => {
   isLoading.value = true
   loadError.value = ''
 
   try {
-    const response = await $api.get<ResourceResponse>('/admin/resources')
+    const response =
+      await $api.get<ResourceResponse>('/admin/resources')
+
     resources.value = response.data
 
     if (response.data.prometheus.status !== 'online') {
@@ -784,7 +1118,10 @@ const fetchResources = async () => {
         'Prometheusに接続できません'
     }
   } catch (error: any) {
-    console.error('リソース情報の取得に失敗しました:', error)
+    console.error(
+      'リソース情報の取得に失敗しました:',
+      error
+    )
 
     loadError.value =
       error?.response?.data?.prometheus?.error ||
@@ -814,12 +1151,30 @@ onBeforeUnmount(() => {
 .resources-page {
   min-height: 100vh;
   padding: 32px;
+
   background:
-    radial-gradient(circle at 85% 5%, rgba(34, 184, 223, 0.08), transparent 24%),
-    linear-gradient(rgba(34, 184, 223, 0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(34, 184, 223, 0.025) 1px, transparent 1px),
+    radial-gradient(
+      circle at 85% 5%,
+      rgba(34, 184, 223, 0.08),
+      transparent 24%
+    ),
+    linear-gradient(
+      rgba(34, 184, 223, 0.025) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(34, 184, 223, 0.025) 1px,
+      transparent 1px
+    ),
     #f3f8fb;
-  background-size: auto, 32px 32px, 32px 32px, auto;
+
+  background-size:
+    auto,
+    32px 32px,
+    32px 32px,
+    auto;
+
   color: #17313d;
 }
 
@@ -1078,6 +1433,10 @@ onBeforeUnmount(() => {
 .history-section {
   max-width: 1500px;
   margin: 28px auto 0;
+}
+
+.mysql-section {
+  margin-top: 32px;
 }
 
 .history-header {

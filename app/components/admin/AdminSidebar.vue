@@ -45,11 +45,19 @@
 
         <div>
           <strong>
-            {{ healthStatus?.status === 'ok' ? 'SYSTEM READY' : 'SYSTEM WARNING' }}
+            {{
+              healthStatus?.status === 'ok'
+                ? 'SYSTEM READY'
+                : 'SYSTEM WARNING'
+            }}
           </strong>
 
           <span>
-            {{ healthStatus?.status === 'ok' ? 'ALL SYSTEMS NORMAL' : 'SYSTEM CHECK REQUIRED' }}
+            {{
+              healthStatus?.status === 'ok'
+                ? 'ALL SYSTEMS NORMAL'
+                : 'SYSTEM CHECK REQUIRED'
+            }}
           </span>
         </div>
       </div>
@@ -58,6 +66,7 @@
 </template>
 
 <script setup lang="ts">
+
 interface HealthStatus {
   status: 'ok' | 'degraded'
   backend: 'ok' | 'error'
@@ -66,6 +75,7 @@ interface HealthStatus {
 }
 
 const { $api } = useNuxtApp()
+
 const route = useRoute()
 
 const healthStatus = ref<HealthStatus | null>(null)
@@ -78,7 +88,8 @@ const menuItems = [
   { number: '05', text: 'API監視', to: '/admin/api-monitor' },
   { number: '06', text: 'システム監視', to: '/admin/system' },
   { number: '07', text: 'メンテナンス', to: '/admin/maintenance' },
-  { number: '08', text: '操作ログ', to: '/admin/logs' }
+  { number: '08', text: '操作ログ', to: '/admin/logs' },
+  { number: '09', text: 'リソース管理', to: '/admin/resources' }
 ]
 
 const isActiveMenu = (path: string) => {
@@ -96,6 +107,7 @@ const checkHealth = async () => {
     })
 
     healthStatus.value = response.data
+
   } catch (error) {
     console.error('Sidebar health check failed:', error)
 
@@ -124,9 +136,11 @@ onBeforeUnmount(() => {
     healthTimer = null
   }
 })
+
 </script>
 
 <style scoped>
+
 .sidebar {
   position: relative;
   width: 265px;
@@ -146,6 +160,7 @@ onBeforeUnmount(() => {
   inset: 0;
   content: "";
   pointer-events: none;
+
   background:
     linear-gradient(
       135deg,
@@ -167,6 +182,7 @@ onBeforeUnmount(() => {
   height: 100%;
   content: "";
   pointer-events: none;
+
   background: linear-gradient(
     to bottom,
     rgba(34, 184, 223, 0),
@@ -181,6 +197,7 @@ onBeforeUnmount(() => {
   z-index: 0;
   pointer-events: none;
   opacity: 0.9;
+
   background-image:
     linear-gradient(
       rgba(34, 184, 223, 0.045) 1px,
@@ -191,25 +208,33 @@ onBeforeUnmount(() => {
       rgba(34, 184, 223, 0.045) 1px,
       transparent 1px
     );
+
   background-size: 28px 28px;
+
   mask-image: linear-gradient(
     to bottom,
     rgba(0, 0, 0, 0.85),
     rgba(0, 0, 0, 0.15) 80%,
     transparent
   );
+
   animation: sidebar-grid 12s linear infinite;
 }
 
 .sidebar-header {
   position: relative;
   z-index: 1;
+
   display: flex;
   align-items: center;
   gap: 14px;
+
   padding: 24px 20px 20px;
+
   border-bottom: 1px solid #d7e8ed;
+
   background: rgba(255, 255, 255, 0.92);
+
   backdrop-filter: blur(6px);
 }
 
@@ -218,8 +243,11 @@ onBeforeUnmount(() => {
   top: 0;
   left: 20px;
   right: 20px;
+
   height: 1px;
+
   content: "";
+
   background: linear-gradient(
     90deg,
     transparent,
@@ -230,26 +258,36 @@ onBeforeUnmount(() => {
 
 .system-emblem {
   position: relative;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   width: 38px;
   height: 38px;
+
   flex-shrink: 0;
+
   border: 1px solid rgba(34, 184, 223, 0.4);
+
   background:
     linear-gradient(
       135deg,
       rgba(34, 184, 223, 0.1),
       rgba(34, 184, 223, 0.025)
     );
+
   color: #22b8df;
   font-size: 14px;
+
   text-shadow: 0 0 10px rgba(34, 184, 223, 0.35);
+
   box-shadow:
     inset 0 0 14px rgba(34, 184, 223, 0.05),
     0 0 18px rgba(34, 184, 223, 0.04);
+
   transform: rotate(45deg);
+
   animation: emblem-pulse 2.4s ease-in-out infinite;
 }
 
@@ -269,7 +307,9 @@ onBeforeUnmount(() => {
   left: -5px;
   right: -5px;
   top: 50%;
+
   height: 1px;
+
   background: rgba(34, 184, 223, 0.15);
 }
 
@@ -295,11 +335,15 @@ onBeforeUnmount(() => {
 .sidebar-access {
   position: relative;
   z-index: 1;
+
   display: flex;
   flex-direction: column;
   gap: 5px;
+
   padding: 18px 20px;
+
   border-bottom: 1px solid #d7e8ed;
+
   background: rgba(248, 252, 253, 0.88);
 }
 
@@ -319,9 +363,12 @@ onBeforeUnmount(() => {
 
 .access-line {
   position: relative;
+
   width: 70%;
   height: 1px;
+
   margin-top: 5px;
+
   background: linear-gradient(
     90deg,
     rgba(34, 184, 223, 0.7),
@@ -333,39 +380,55 @@ onBeforeUnmount(() => {
   position: absolute;
   top: -2px;
   right: 0;
+
   width: 4px;
   height: 5px;
+
   content: "";
+
   background: #22b8df;
+
   box-shadow: 0 0 8px rgba(34, 184, 223, 0.35);
 }
 
 .menu {
   position: relative;
   z-index: 1;
+
   display: flex;
   flex-direction: column;
   gap: 4px;
+
   padding: 18px 12px;
 }
 
 .menu-item {
   position: relative;
+
   display: flex;
   align-items: center;
   gap: 14px;
+
   width: 100%;
   min-height: 48px;
+
   padding: 0 12px;
+
   border: 1px solid transparent;
   border-radius: 2px;
+
   background: transparent;
+
   color: #718b95;
+
   font-family: inherit;
   text-align: left;
   text-decoration: none;
+
   cursor: pointer;
+
   overflow: hidden;
+
   transition:
     color 0.22s ease,
     border-color 0.22s ease,
@@ -378,12 +441,18 @@ onBeforeUnmount(() => {
   position: absolute;
   left: 0;
   top: 50%;
+
   width: 2px;
   height: 0;
+
   content: "";
+
   background: #22b8df;
+
   transform: translateY(-50%);
+
   transition: height 0.2s ease;
+
   box-shadow: 0 0 8px rgba(34, 184, 223, 0.35);
 }
 
@@ -392,29 +461,39 @@ onBeforeUnmount(() => {
   top: 0;
   right: 0;
   bottom: 0;
+
   width: 24%;
+
   content: "";
+
   pointer-events: none;
+
   background: linear-gradient(
     90deg,
     transparent,
     rgba(34, 184, 223, 0.04)
   );
+
   opacity: 0;
+
   transition: opacity 0.22s ease;
 }
 
 .menu-item:hover,
 .menu-item.active {
   border-color: rgba(34, 184, 223, 0.22);
+
   background:
     linear-gradient(
       90deg,
       rgba(34, 184, 223, 0.09),
       rgba(34, 184, 223, 0.035)
     );
+
   color: #17313d;
+
   transform: translateX(2px);
+
   box-shadow:
     inset 0 0 20px rgba(34, 184, 223, 0.025),
     0 3px 12px rgba(34, 184, 223, 0.035);
@@ -433,10 +512,14 @@ onBeforeUnmount(() => {
 .menu-number {
   position: relative;
   z-index: 1;
+
   width: 22px;
+
   color: #a0b4bb;
+
   font-size: 10px;
   font-weight: 800;
+
   transition: color 0.2s ease;
 }
 
@@ -448,17 +531,22 @@ onBeforeUnmount(() => {
 .menu-text {
   position: relative;
   z-index: 1;
+
   font-size: 12px;
   font-weight: 700;
 }
 
 .menu-scan {
   position: absolute;
+
   left: -40%;
   bottom: 0;
+
   width: 40%;
   height: 1px;
+
   opacity: 0;
+
   background: linear-gradient(
     90deg,
     transparent,
@@ -475,18 +563,25 @@ onBeforeUnmount(() => {
 .sidebar-footer {
   position: relative;
   z-index: 1;
+
   margin-top: auto;
+
   padding: 14px 16px 18px;
 }
 
 .system-online {
   position: relative;
+
   display: flex;
   align-items: center;
   gap: 10px;
+
   padding: 13px 12px;
+
   border: 1px solid rgba(49, 185, 133, 0.22);
+
   background: rgba(49, 185, 133, 0.035);
+
   transition:
     border-color 0.25s ease,
     background 0.25s ease,
@@ -498,8 +593,11 @@ onBeforeUnmount(() => {
   left: 0;
   top: 8px;
   bottom: 8px;
+
   width: 2px;
+
   content: "";
+
   background: #31b985;
   opacity: 0.7;
 }
@@ -508,10 +606,14 @@ onBeforeUnmount(() => {
   position: absolute;
   top: 0;
   right: 0;
+
   width: 18px;
   height: 1px;
+
   content: "";
+
   background: #31b985;
+
   opacity: 0.5;
 }
 
@@ -533,18 +635,26 @@ onBeforeUnmount(() => {
 
 .status-dot {
   display: inline-block;
+
   width: 8px;
   height: 8px;
+
   flex-shrink: 0;
+
   border-radius: 50%;
+
   background: #31b985;
+
   box-shadow: 0 0 10px rgba(49, 185, 133, 0.5);
+
   animation: status-pulse 1.8s ease-in-out infinite;
 }
 
 .status-dot.offline {
   background: #e56557;
+
   box-shadow: 0 0 10px rgba(229, 101, 87, 0.45);
+
   animation: status-error-pulse 1.1s ease-in-out infinite;
 }
 
@@ -566,7 +676,9 @@ onBeforeUnmount(() => {
 
 .system-online span {
   margin-top: 4px;
+
   color: #7d969f;
+
   font-size: 8px;
   font-weight: 700;
   letter-spacing: 0.08em;
