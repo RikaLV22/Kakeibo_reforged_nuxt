@@ -1,150 +1,152 @@
 <template>
-  <div
-    v-if="modelValue"
-    class="modal-overlay"
-    @click.self="closeModal"
-  >
-    <div class="account-modal">
-      <header class="modal-header">
-        <div>
-          <div class="eyebrow">
-            ACCOUNT / SETUP
-          </div>
-
-          <h2>
-            口座登録
-          </h2>
-
-          <p>
-            新しい口座を家計簿へ登録します。
-          </p>
-        </div>
-
-        <button
-          type="button"
-          class="close-button"
-          @click="closeModal"
-        >
-          ×
-        </button>
-      </header>
-
-      <div class="modal-body">
-        <div class="account-grid">
-          <div class="form-section">
-            <label>
-              <span class="label-number">
-                01
-              </span>
-
-              銀行名
-
-              <span class="required">
-                REQUIRED
-              </span>
-            </label>
-
-            <div class="input-shell select-shell">
-              <select
-                v-model="form.bank_id"
-              >
-                <option value="">
-                  選択してください
-                </option>
-
-                <option
-                  v-for="bank in banks"
-                  :key="bank.id"
-                  :value="bank.id"
-                >
-                  {{ bank.name }}
-                </option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-section">
-            <label>
-              <span class="label-number">
-                02
-              </span>
-
-              口座番号
-
-              <span class="required">
-                REQUIRED
-              </span>
-            </label>
-
-            <div class="input-shell">
-              <input
-                v-model="form.account_number"
-                type="text"
-                inputmode="numeric"
-                placeholder="例：1234567"
-              >
-            </div>
-          </div>
-
-          <div class="form-section full">
-            <label>
-              <span class="label-number">
-                03
-              </span>
-
-              初期残高
-
-              <span class="required">
-                REQUIRED
-              </span>
-            </label>
-
-            <div class="amount-input">
-              <span class="currency">
-                ¥
-              </span>
-
-              <input
-                v-model.number="form.balance"
-                type="number"
-                placeholder="0"
-              >
-
-              <span class="unit">
-                円
-              </span>
+  <Teleport to="body">
+    <div
+      v-if="modelValue"
+      class="modal-overlay"
+      @click.self="closeModal"
+    >
+      <div class="account-modal">
+        <header class="modal-header">
+          <div>
+            <div class="eyebrow">
+              ACCOUNT / SETUP
             </div>
 
-            <p class="hint">
-              現在の口座残高を入力してください。
+            <h2>
+              口座登録
+            </h2>
+
+            <p>
+              新しい口座を家計簿へ登録します。
             </p>
           </div>
+
+          <button
+            type="button"
+            class="close-button"
+            @click="closeModal"
+          >
+            ×
+          </button>
+        </header>
+
+        <div class="modal-body">
+          <div class="account-grid">
+            <div class="form-section">
+              <label>
+                <span class="label-number">
+                  01
+                </span>
+
+                銀行名
+
+                <span class="required">
+                  REQUIRED
+                </span>
+              </label>
+
+              <div class="input-shell select-shell">
+                <select
+                  v-model="form.bank_id"
+                >
+                  <option value="">
+                    選択してください
+                  </option>
+
+                  <option
+                    v-for="bank in banks"
+                    :key="bank.id"
+                    :value="bank.id"
+                  >
+                    {{ bank.name }}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <label>
+                <span class="label-number">
+                  02
+                </span>
+
+                口座番号
+
+                <span class="required">
+                  REQUIRED
+                </span>
+              </label>
+
+              <div class="input-shell">
+                <input
+                  v-model="form.account_number"
+                  type="text"
+                  inputmode="numeric"
+                  placeholder="例：1234567"
+                >
+              </div>
+            </div>
+
+            <div class="form-section full">
+              <label>
+                <span class="label-number">
+                  03
+                </span>
+
+                初期残高
+
+                <span class="required">
+                  REQUIRED
+                </span>
+              </label>
+
+              <div class="amount-input">
+                <span class="currency">
+                  ¥
+                </span>
+
+                <input
+                  v-model.number="form.balance"
+                  type="number"
+                  placeholder="0"
+                >
+
+                <span class="unit">
+                  円
+                </span>
+              </div>
+
+              <p class="hint">
+                現在の口座残高を入力してください。
+              </p>
+            </div>
+          </div>
         </div>
+
+        <footer class="modal-footer">
+          <button
+            type="button"
+            class="cancel-button"
+            @click="closeModal"
+          >
+            閉じる
+          </button>
+
+          <button
+            type="button"
+            class="submit-button"
+            @click="handleCreate"
+          >
+            <span>
+              ＋
+            </span>
+
+            登録
+          </button>
+        </footer>
       </div>
-
-      <footer class="modal-footer">
-        <button
-          type="button"
-          class="cancel-button"
-          @click="closeModal"
-        >
-          閉じる
-        </button>
-
-        <button
-          type="button"
-          class="submit-button"
-          @click="handleCreate"
-        >
-          <span>
-            ＋
-          </span>
-
-          登録
-        </button>
-      </footer>
     </div>
-  </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
